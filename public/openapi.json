@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Kyokon API",
-    "description": "REST API for USDA FoodData Central SR Legacy and Foundation Foods data.\n\n**Kyokon** (巨根) — it means exactly what you think it means. 🍆\n\nProvides access to **8,158 foods** with nutrients, portions, categories, and cookability data.\n\n---\n\n### Authentication\n\nClick the **Authorize** button above to configure API access.\n\n**API Keys:**\n- Pass via `Authorization: Bearer kyo_...` header or `X-API-Key: kyo_...` header\n- Keys are prefixed with `kyo_` and are 56 characters total\n- Request a key from your administrator via `/admin/keys`\n\n**Development Mode:**\n- Authentication is optional when `NODE_ENV !== 'production'` and `REQUIRE_API_KEY` is not set\n- Legacy single `API_KEY` env var still supported for backward compatibility\n\n**Admin Access:**\n- Admin endpoints require `X-Admin-Secret` header matching server's `ADMIN_SECRET` env var",
+    "description": "REST API for USDA FoodData Central SR Legacy, Foundation, and Branded foods data.\n\n**Kyokon** (巨根) — it means exactly what you think it means. 🍆\n\nProvides access to **8,158 foods** with nutrients, portions, categories, and cookability data.\n\n---\n\n### Authentication\n\nClick the **Authorize** button above to configure API access.\n\n**API Keys:**\n- Pass via `Authorization: Bearer kyo_...` header or `X-API-Key: kyo_...` header\n- Keys are prefixed with `kyo_` and are 56 characters total\n- Request a key from your administrator via `/admin/keys`\n\n**Development Mode:**\n- Authentication is optional when `NODE_ENV !== 'production'` and `REQUIRE_API_KEY` is not set\n- Legacy single `API_KEY` env var still supported for backward compatibility\n\n**Admin Access:**\n- Admin endpoints require `X-Admin-Secret` header matching server's `ADMIN_SECRET` env var",
     "version": "1.7.0"
   },
   "servers": [
@@ -831,7 +831,7 @@
             "oneOf": [
               {
                 "type": "object",
-                "required": ["ingredientName", "ingredientSlug", "canonicalId", "syntheticFdcId", "frequency", "fdcCount", "nutrients"],
+                "required": ["ingredientName", "ingredientSlug", "canonicalId", "syntheticFdcId", "frequency", "fdcCount", "method", "confidence", "nutrients"],
                 "properties": {
                   "ingredientName": { "type": "string" },
                   "ingredientSlug": { "type": "string" },
@@ -839,6 +839,8 @@
                   "syntheticFdcId": { "type": ["integer", "null"] },
                   "frequency": { "type": "integer" },
                   "fdcCount": { "type": "integer" },
+                  "method": { "type": "string", "enum": ["direct", "alias", "fuzzy"], "description": "How the match was found: direct slug, alias lookup, or trigram fuzzy" },
+                  "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "Match confidence (1.0 for direct/alias, similarity score for fuzzy)" },
                   "nutrients": { "type": "array", "items": { "$ref": "#/components/schemas/IngredientNutrient" } }
                 }
               },

@@ -6,7 +6,7 @@ import "swagger-ui-react/swagger-ui.css";
 export default function SwaggerUI() {
   return (
     <SwaggerUIReact
-      url="/openapi.json"
+      url="/api/openapi"
       persistAuthorization={true}
       tryItOutEnabled={true}
       displayRequestDuration={true}

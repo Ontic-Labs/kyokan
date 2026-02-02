@@ -27,7 +27,7 @@ function getPool(): Pool {
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is not set");
   }
-  return new Pool({ connectionString, max: 5 });
+  return new Pool({ connectionString, max: 1 });
 }
 
 interface CanonicalInfo {
@@ -101,7 +101,20 @@ async function main(): Promise<void> {
 
   const forceMode = process.argv.includes("--force");
   const slugIdx = process.argv.indexOf("--slug");
-  const slugFilter = slugIdx !== -1 ? process.argv[slugIdx + 1] : undefined;
+  let slugFilter: string | undefined;
+
+  if (slugIdx !== -1) {
+    const nextArg = process.argv[slugIdx + 1];
+    if (!nextArg || nextArg.startsWith("--")) {
+      console.error("Error: --slug requires a value");
+      process.exit(1);
+    }
+    if (!/^[a-z0-9-]+$/.test(nextArg)) {
+      console.error("Error: slug must be lowercase kebab-case");
+      process.exit(1);
+    }
+    slugFilter = nextArg;
+  }
 
   if (forceMode) console.log("Force mode: recomputing all");
   if (slugFilter) console.log(`Slug filter: ${slugFilter}`);
@@ -109,6 +122,16 @@ async function main(): Promise<void> {
 
   const pool = getPool();
   const client = await pool.connect();
+
+  // Clean shutdown on SIGINT/SIGTERM
+  const cleanup = async () => {
+    console.log("\nShutting down...");
+    client.release();
+    await pool.end();
+    process.exit(0);
+  };
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
 
   try {
     // Load canonical ingredients with member counts
@@ -183,7 +206,7 @@ async function main(): Promise<void> {
           [ci.canonicalId]
         );
 
-        // Group amounts by nutrient
+        // Group amounts by nutrient (with NaN guard)
         const nutrientAmounts = new Map<
           number,
           { unitName: string; amounts: number[] }
@@ -191,6 +214,12 @@ async function main(): Promise<void> {
         for (const row of nutrientData.rows) {
           const nid = Number(row.nutrient_id);
           const amt = Number(row.amount);
+          if (Number.isNaN(nid) || Number.isNaN(amt)) {
+            console.warn(
+              `  Skipping invalid row for "${ci.canonicalSlug}": nutrient_id=${row.nutrient_id}, amount=${row.amount}`
+            );
+            continue;
+          }
           let entry = nutrientAmounts.get(nid);
           if (!entry) {
             entry = { unitName: row.unit_name, amounts: [] };
@@ -212,17 +241,10 @@ async function main(): Promise<void> {
           continue;
         }
 
-        // Write to DB in batches
+        // Write to DB in batches (UPSERT first, then cleanup stale rows)
         await client.query("BEGIN");
 
-        if (forceMode) {
-          await client.query(
-            `DELETE FROM canonical_ingredient_nutrients WHERE canonical_id = $1`,
-            [ci.canonicalId]
-          );
-        }
-
-        // 13 params per row, batch of 500 = 6500 params (well under 65535 limit)
+        const now = new Date();
         const NUTRIENT_BATCH = 500;
         for (let j = 0; j < stats.length; j += NUTRIENT_BATCH) {
           const batch = stats.slice(j, j + NUTRIENT_BATCH);
@@ -247,7 +269,7 @@ async function main(): Promise<void> {
               s.max,
               s.nSamples,
               s.nTotal,
-              new Date()
+              now
             );
             idx += 13;
           }
@@ -273,6 +295,19 @@ async function main(): Promise<void> {
           );
 
           totalNutrientRows += batch.length;
+        }
+
+        // In force mode, remove stale nutrient rows (nutrients no longer
+        // present in member foods). Done AFTER inserts so a crash leaves
+        // stale-but-present data rather than missing data.
+        if (forceMode) {
+          const currentNutrientIds = stats.map((s) => s.nutrientId);
+          await client.query(
+            `DELETE FROM canonical_ingredient_nutrients
+             WHERE canonical_id = $1
+             AND nutrient_id != ALL($2::int[])`,
+            [ci.canonicalId, currentNutrientIds]
+          );
         }
 
         await client.query("COMMIT");

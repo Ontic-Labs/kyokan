@@ -226,6 +226,9 @@ export const ResolveRequestSchema = z.object({
 });
 export type ResolveRequest = z.infer<typeof ResolveRequestSchema>;
 
+export const MatchMethodSchema = z.enum(["direct", "alias", "fuzzy"]);
+export type MatchMethod = z.infer<typeof MatchMethodSchema>;
+
 export const ResolvedIngredientSchema = z.object({
   input: z.string(),
   match: z.object({
@@ -235,6 +238,8 @@ export const ResolvedIngredientSchema = z.object({
     syntheticFdcId: dbInt.nullable(),
     frequency: dbInt,
     fdcCount: dbInt,
+    method: MatchMethodSchema,
+    confidence: dbNum,
     nutrients: z.array(IngredientNutrientSchema),
   }).nullable(),
 });
