@@ -1,5 +1,9 @@
 # Multi-Resolution Canonicalization Spec (Base + Specific) with Nutrition-Assisted Validation
 
+> ⚠️ **DEPRECATION NOTICE (2026-02-02):** This spec describes the FDC-first canonicalization approach, which has been superseded by the **recipe-first** approach. The canonical vocabulary should come from recipe ingredient names (14,915 unique names extracted from real recipes), NOT from FDC descriptions via regex. See `docs/synthetic.md` section 1.3 for the updated paradigm.
+>
+> The tables and functions described here (`food_canonical_names`, `canonicalizeDescription()`) remain useful for FDC description normalization, but synthetic ingredients should be built from recipe ingredient mappings.
+
 > **Objective:** For every SR Legacy `foods` row, produce **two canonical names**:
 >
 > * **Base canonical**: the broad identity (e.g., `beer`)

@@ -219,23 +219,100 @@ describe("canonicalizeDescription", () => {
   // =========================================================================
 
   describe("generic foods", () => {
-    test("simple food", () => {
+    test("simple food with modifier", () => {
       const r = canonicalizeDescription("Butter, salted");
       expect(r.baseName).toBe("butter");
-      expect(r.specificName).toBe("butter");
+      expect(r.specificName).toBe("salted butter");
+      expect(r.specificSlug).toBe("salted-butter");
     });
 
-    test("chicken breast", () => {
+    test("chicken breast - skips poultry type classifier", () => {
       const r = canonicalizeDescription(
         "Chicken, broilers or fryers, breast, meat only, raw"
       );
       expect(r.baseName).toBe("chicken");
+      expect(r.specificName).toBe("chicken breast");
+      expect(r.specificSlug).toBe("chicken-breast");
     });
 
-    test("spices pepper black", () => {
+    test("chicken thigh", () => {
+      const r = canonicalizeDescription(
+        "Chicken, broilers or fryers, thigh, meat only, raw"
+      );
+      expect(r.specificName).toBe("chicken thigh");
+    });
+
+    test("ground beef groups all lean ratios", () => {
+      const r1 = canonicalizeDescription("Beef, ground, 80% lean meat / 20% fat, raw");
+      const r2 = canonicalizeDescription("Beef, ground, 90% lean meat / 10% fat, raw");
+      expect(r1.specificSlug).toBe("ground-beef");
+      expect(r2.specificSlug).toBe("ground-beef");
+    });
+
+    test("beef cuts are distinct", () => {
+      const chuck = canonicalizeDescription("Beef, chuck, arm pot roast, raw");
+      const rib = canonicalizeDescription("Beef, rib, whole, raw");
+      const round = canonicalizeDescription("Beef, round, top round steak, raw");
+      expect(chuck.specificSlug).toBe("beef-chuck");
+      expect(rib.specificSlug).toBe("beef-rib");
+      expect(round.specificSlug).toBe("beef-round");
+    });
+
+    test("fish species are distinct", () => {
+      const cod = canonicalizeDescription("Fish, cod, Atlantic, raw");
+      const salmon = canonicalizeDescription("Fish, salmon, Atlantic, wild, raw");
+      expect(cod.specificSlug).toBe("cod");
+      expect(salmon.specificSlug).toBe("salmon");
+    });
+
+    test("ground turkey", () => {
+      const r = canonicalizeDescription("Turkey, ground, raw");
+      expect(r.specificSlug).toBe("ground-turkey");
+    });
+
+    test("pepper varieties are distinct", () => {
+      const bell = canonicalizeDescription("Peppers, bell, green, raw");
+      const jalapeno = canonicalizeDescription("Peppers, jalapeno, raw");
+      expect(bell.specificSlug).toBe("bell-peppers");
+      expect(jalapeno.specificSlug).toBe("jalapeno-peppers");
+    });
+
+    test("spices pepper black - container category extraction", () => {
       const r = canonicalizeDescription("Spices, pepper, black");
-      expect(r.baseName).toBe("spices");
-      // v1: first segment is base; future domain rules may improve this
+      expect(r.baseName).toBe("pepper");
+      expect(r.baseSlug).toBe("pepper");
+      expect(r.specificName).toBe("black pepper");
+      expect(r.specificSlug).toBe("black-pepper");
+      expect(r.removedTokens).toContain("spices");
+    });
+
+    test("nuts almonds", () => {
+      const r = canonicalizeDescription(
+        "Nuts, almonds, dry roasted, with salt added"
+      );
+      expect(r.baseName).toBe("almonds");
+      expect(r.baseSlug).toBe("almonds");
+    });
+
+    test("seeds sunflower", () => {
+      const r = canonicalizeDescription(
+        "Seeds, sunflower seed kernels, dried"
+      );
+      expect(r.baseName).toBe("sunflower seed kernels");
+      expect(r.baseSlug).toBe("sunflower-seed-kernels");
+    });
+
+    test("snacks banana chips", () => {
+      const r = canonicalizeDescription("Snacks, banana chips");
+      expect(r.baseName).toBe("banana chips");
+    });
+
+    test("beverages energy drink", () => {
+      const r = canonicalizeDescription(
+        "Beverages, Energy drink, Citrus"
+      );
+      expect(r.baseName).toBe("energy drink");
+      expect(r.specificName).toBe("citrus energy drink");
     });
   });
 

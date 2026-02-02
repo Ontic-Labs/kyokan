@@ -3,7 +3,7 @@
   "info": {
     "title": "Kyokon API",
     "description": "REST API for USDA FoodData Central SR Legacy and Foundation Foods data.\n\n**Kyokon** (巨根) — it means exactly what you think it means. 🍆\n\nProvides access to **8,158 foods** with nutrients, portions, categories, and cookability data.",
-    "version": "1.5.0"
+    "version": "1.6.0"
   },
   "servers": [
     {
@@ -187,6 +187,75 @@
         }
       }
     },
+    "/canonicals": {
+      "get": {
+        "summary": "Search canonical aggregates",
+        "description": "Browse and search canonical ingredient aggregates. Each aggregate represents a statistical composite of all foods sharing a canonical name.",
+        "operationId": "searchCanonicals",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Case-insensitive partial match on canonical name",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1, "minimum": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 25, "minimum": 1, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of canonical aggregates",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedCanonicals" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/canonicals/{slug}": {
+      "get": {
+        "summary": "Get canonical aggregate detail",
+        "description": "Returns detailed information for a canonical aggregate, including statistical nutrient values (median, p5/p95 boundaries) and source foods.",
+        "operationId": "getCanonicalDetail",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "Canonical slug (e.g. 'black-pepper', 'chicken')",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Canonical aggregate with nutrients and sources",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CanonicalDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Canonical aggregate not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/nutrients": {
       "get": {
         "summary": "List nutrients",
@@ -359,6 +428,65 @@
         "required": ["categories"],
         "properties": {
           "categories": { "type": "array", "items": { "$ref": "#/components/schemas/CategoryWithCount" } }
+        }
+      },
+      "CanonicalListItem": {
+        "type": "object",
+        "required": ["canonicalId", "canonicalSlug", "canonicalName", "foodCount"],
+        "properties": {
+          "canonicalId": { "type": "integer", "description": "Synthetic FDC ID (9,200,000+)" },
+          "canonicalSlug": { "type": "string", "description": "URL-safe slug" },
+          "canonicalName": { "type": "string", "description": "Human-readable canonical name" },
+          "foodCount": { "type": "integer", "description": "Number of source foods in this aggregate" }
+        }
+      },
+      "CanonicalNutrient": {
+        "type": "object",
+        "required": ["nutrientId", "name", "unit", "median", "p5", "p95", "min", "max", "sampleCount"],
+        "properties": {
+          "nutrientId": { "type": "integer" },
+          "name": { "type": "string" },
+          "unit": { "type": "string" },
+          "median": { "type": "number", "description": "Median value per 100g across source foods" },
+          "p5": { "type": ["number", "null"], "description": "5th percentile (null if n < 3)" },
+          "p95": { "type": ["number", "null"], "description": "95th percentile (null if n < 3)" },
+          "min": { "type": "number" },
+          "max": { "type": "number" },
+          "sampleCount": { "type": "integer", "description": "Number of foods with this nutrient" }
+        }
+      },
+      "CanonicalSource": {
+        "type": "object",
+        "required": ["fdcId", "description", "dataType"],
+        "properties": {
+          "fdcId": { "type": "integer" },
+          "description": { "type": "string" },
+          "dataType": { "type": "string" }
+        }
+      },
+      "CanonicalDetail": {
+        "type": "object",
+        "required": ["canonicalId", "canonicalSlug", "canonicalName", "level", "foodCount", "dataTypes", "representativeFdcId", "nutrients", "sources"],
+        "properties": {
+          "canonicalId": { "type": "integer" },
+          "canonicalSlug": { "type": "string" },
+          "canonicalName": { "type": "string" },
+          "level": { "type": "string" },
+          "foodCount": { "type": "integer" },
+          "dataTypes": { "type": "array", "items": { "type": "string" } },
+          "representativeFdcId": { "type": ["integer", "null"] },
+          "nutrients": { "type": "array", "items": { "$ref": "#/components/schemas/CanonicalNutrient" } },
+          "sources": { "type": "array", "items": { "$ref": "#/components/schemas/CanonicalSource" } }
+        }
+      },
+      "PaginatedCanonicals": {
+        "type": "object",
+        "required": ["items", "total", "page", "pageSize"],
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/CanonicalListItem" } },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "pageSize": { "type": "integer" }
         }
       },
       "ErrorResponse": {

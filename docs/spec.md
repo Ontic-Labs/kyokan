@@ -55,13 +55,29 @@
 3. `003_fix_veto_score_constraint.sql` — Fixed group-based scoring constraint
 4. `004_atwater_factors.sql` — Atwater/protein conversion factors for Foundation
 5. `005_food_state.sql` — Food state classification (raw/cooked, preservation, processing)
+6. `006_canonical_names.sql` — Multi-resolution canonical names (base/specific)
+7. `007_branded_foods.sql` — Branded foods columns (not yet applied)
+8. `008_canonical_aggregates.sql` — Canonical aggregate tables with synthetic FDC IDs
 
 ### Pending / Future Work
 
 - [x] Add `CATEGORY_INFANT` to hard vetoes (345 baby foods → now excluded)
 - [x] Expose `is_cookable` filter on API endpoints
 - [x] Review single-layer vetoes — `LEXICAL_SUPPLEMENT` and `NUTRIENT_PROTEIN_ISOLATE` promoted to hard vetoes (v1.4.0)
+- [x] Canonical name extraction (migration 006)
+- [x] Canonical aggregates with synthetic FDC IDs (9,200,000+ range)
+- [ ] **Recipe-first canonical naming** — see `docs/synthetic.md` section 1.3
+- [ ] Recipe ingredient mapping (map recipe names → FDC foods)
 - [ ] Consider additional datasets (Branded Foods, FNDDS)
+
+### Architecture Note: Recipe-First Canonical Naming
+
+**Key insight (2026-02-02):** The canonical vocabulary should come from recipe ingredients, NOT from FDC descriptions.
+
+- Recipe data (`recipes/RAW_recipes.csv`) contains 14,915 unique ingredient names with frequency counts
+- These represent how humans actually think about cooking ingredients
+- Instead of deriving names from FDC via regex, we map recipe ingredients TO FDC foods
+- See `docs/synthetic.md` for full specification
 
 ---
 
