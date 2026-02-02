@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: "Kyokon — USDA FoodData Central Explorer",
   description:
     "Search, browse, and explore 8,000+ foods from the USDA FoodData Central database. SR Legacy and Foundation Foods with nutrients, portions, and cookability data.",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/apple-touch-icon.svg",
+  },
 };
 
 export default function RootLayout({

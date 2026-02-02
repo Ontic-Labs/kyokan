@@ -15,10 +15,12 @@ function getPool(): Pool {
       connectionString,
       max: process.env.NODE_ENV === "production" ? 5 : 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
-      ...(process.env.NODE_ENV === "production" && {
-        ssl: { rejectUnauthorized: false },
-      }),
+      connectionTimeoutMillis: 10000,
+      ssl: { rejectUnauthorized: false },
+    });
+
+    globalForDb.pool.on("error", (err) => {
+      console.error("Unexpected pool error:", err);
     });
   }
   return globalForDb.pool;
@@ -32,7 +34,12 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
   params?: unknown[]
 ): Promise<QueryResult<T>> {
   const pool = getPool();
-  return pool.query<T>(sql, params);
+  try {
+    return await pool.query<T>(sql, params);
+  } catch (err) {
+    console.error("Database query error:", err);
+    throw err;
+  }
 }
 
 /**

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none">
+  <!-- Background -->
+  <rect width="180" height="180" rx="40" fill="#7C3AED"/>
+  <!-- Eggplant body (white/light) -->
+  <ellipse cx="90" cy="105" rx="45" ry="60" fill="#F5F3FF"/>
+  <!-- Eggplant highlight -->
+  <ellipse cx="75" cy="90" rx="10" ry="20" fill="#DDD6FE" opacity="0.6"/>
+  <!-- Stem -->
+  <path d="M90 45 C90 30, 105 22, 112 30 C119 38, 112 45, 102 45 L90 45" fill="#22C55E"/>
+  <path d="M90 45 C90 30, 75 22, 68 30 C61 38, 68 45, 78 45 L90 45" fill="#16A34A"/>
+  <!-- Cap -->
+  <ellipse cx="90" cy="47" rx="18" ry="7" fill="#15803D"/>
+</svg>

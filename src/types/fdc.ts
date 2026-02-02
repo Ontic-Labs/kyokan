@@ -72,9 +72,9 @@ export interface FoodPortionRow {
 // Enum schemas for food state
 export const CookingStateSchema = z.enum(["unknown", "raw", "cooked"]);
 export const CookingMethodSchema = z.enum([
-  "baked", "boiled", "braised", "broiled", "fried", "grilled",
-  "microwaved", "poached", "roasted", "sauteed", "simmered",
-  "steamed", "stewed", "stir_fried", "toasted", "pan_fried", "deep_fried",
+  "baked", "blanched", "boiled", "braised", "broiled", "fried", "grilled",
+  "microwaved", "poached", "roasted", "sauteed", "scrambled", "simmered",
+  "smoked", "steamed", "stewed", "stir_fried", "toasted", "pan_fried", "deep_fried",
 ]);
 export const PreservationSchema = z.enum([
   "unknown", "fresh", "frozen", "canned", "dried", "cured",

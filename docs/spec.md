@@ -38,10 +38,9 @@
 | Metric | Count | % |
 |--------|-------|---|
 | Total foods | 8,158 | 100% |
-| Cookable | 7,311 | 89.6% |
-| Excluded | 847 | 10.4% |
-| └ Hard-vetoed (prepared foods) | 506 | |
-| └ 2+ veto layers (infant/medical) | 341 | |
+| Cookable | 7,291 | 89.4% |
+| Excluded | 867 | 10.6% |
+| └ Hard-vetoed | 867 | |
 
 ### Scope Changes from Original Spec
 
@@ -55,12 +54,13 @@
 2. `002_cookability.sql` — Cookability assessment table
 3. `003_fix_veto_score_constraint.sql` — Fixed group-based scoring constraint
 4. `004_atwater_factors.sql` — Atwater/protein conversion factors for Foundation
+5. `005_food_state.sql` — Food state classification (raw/cooked, preservation, processing)
 
 ### Pending / Future Work
 
-- [ ] Add `CATEGORY_INFANT` to hard vetoes (345 baby foods currently kept)
-- [ ] Expose `is_cookable` filter on API endpoints
-- [ ] Review single-layer items (LEXICAL_SUPPLEMENT, NUTRIENT_PROTEIN_ISOLATE)
+- [x] Add `CATEGORY_INFANT` to hard vetoes (345 baby foods → now excluded)
+- [x] Expose `is_cookable` filter on API endpoints
+- [x] Review single-layer vetoes — `LEXICAL_SUPPLEMENT` and `NUTRIENT_PROTEIN_ISOLATE` promoted to hard vetoes (v1.4.0)
 - [ ] Consider additional datasets (Branded Foods, FNDDS)
 
 ---
