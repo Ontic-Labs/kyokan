@@ -49,8 +49,8 @@ export function validatedResponse<T extends z.ZodTypeAny>(
 
 /**
  * Validate an array of items against a schema.
- * Returns validated items, filtering out invalid ones in production.
- * Throws in development if any item fails validation.
+ * In development, throws if any item fails validation.
+ * In production, logs errors but returns all items to avoid silent data loss.
  */
 export function validateItems<T extends z.ZodTypeAny>(
   schema: T,
@@ -73,6 +73,7 @@ export function validateItems<T extends z.ZodTypeAny>(
       failedCount: errors.length,
       totalCount: items.length,
       firstError: errors[0],
+      sampleItem: JSON.stringify(items[errors[0].index]).slice(0, 500),
     });
 
     if (process.env.NODE_ENV === "development") {
@@ -80,6 +81,9 @@ export function validateItems<T extends z.ZodTypeAny>(
         `${errors.length} items failed validation. First error at index ${errors[0].index}: ${JSON.stringify(errors[0].issues)}`
       );
     }
+
+    // In production, return raw items rather than silently dropping them
+    return items as z.infer<T>[];
   }
 
   return validated;
