@@ -13,9 +13,12 @@ function getPool(): Pool {
     }
     globalForDb.pool = new Pool({
       connectionString,
-      max: 20,
+      max: process.env.NODE_ENV === "production" ? 5 : 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 5000,
+      ...(process.env.NODE_ENV === "production" && {
+        ssl: { rejectUnauthorized: false },
+      }),
     });
   }
   return globalForDb.pool;

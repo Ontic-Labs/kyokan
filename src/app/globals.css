@@ -1,14 +1,182 @@
+/* ============================================================
+   Kyokan Design Tokens
+   All visual values flow through semantic tokens.
+   DO NOT use hardcoded colors, spacing, or typography values.
+   See: ai/rules/semantic-design-tokens.yaml
+   ============================================================ */
+
+@import "tailwindcss";
+
+/* ----- Layer 1: Primitive Token Definitions ----- */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surface */
+  --token-surface: #ffffff;
+  --token-surface-raised: #f9fafb;
+  --token-surface-elevated: #f3f4f6;
+  --token-surface-overlay: rgba(0, 0, 0, 0.5);
+  --token-surface-nav: #ffffff;
+
+  /* Text */
+  --token-text-primary: #09090b;
+  --token-text-secondary: #3f3f46;
+  --token-text-muted: #71717a;
+  --token-text-inverse: #fafafa;
+  --token-text-link: #4f46e5;
+  --token-text-link-hover: #3730a3;
+
+  /* Border */
+  --token-border-default: #e4e4e7;
+  --token-border-subtle: #f4f4f5;
+  --token-border-strong: #a1a1aa;
+
+  /* Interactive */
+  --token-interactive-primary: #4f46e5;
+  --token-interactive-primary-hover: #4338ca;
+  --token-interactive-primary-text: #ffffff;
+  --token-interactive-secondary: #f4f4f5;
+  --token-interactive-secondary-hover: #e4e4e7;
+  --token-interactive-secondary-text: #09090b;
+  --token-interactive-destructive: #dc2626;
+  --token-interactive-destructive-hover: #b91c1c;
+  --token-interactive-focus-ring: rgba(79, 70, 229, 0.5);
+
+  /* Status */
+  --token-status-success: #16a34a;
+  --token-status-success-bg: #f0fdf4;
+  --token-status-warning: #d97706;
+  --token-status-warning-bg: #fffbeb;
+  --token-status-error: #dc2626;
+  --token-status-error-bg: #fef2f2;
+  --token-status-info: #2563eb;
+  --token-status-info-bg: #eff6ff;
+
+  /* Table */
+  --token-table-header-bg: #f4f4f5;
+  --token-table-header-text: #09090b;
+  --token-table-row-bg: #ffffff;
+  --token-table-row-alt-bg: #fafafa;
+  --token-table-row-hover: #f4f4f5;
+  --token-table-border: #e4e4e7;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Surface */
+    --token-surface: #09090b;
+    --token-surface-raised: #18181b;
+    --token-surface-elevated: #27272a;
+    --token-surface-overlay: rgba(0, 0, 0, 0.7);
+    --token-surface-nav: #0f0f12;
+
+    /* Text */
+    --token-text-primary: #fafafa;
+    --token-text-secondary: #a1a1aa;
+    --token-text-muted: #71717a;
+    --token-text-inverse: #09090b;
+    --token-text-link: #818cf8;
+    --token-text-link-hover: #a5b4fc;
+
+    /* Border */
+    --token-border-default: #27272a;
+    --token-border-subtle: #1c1c1f;
+    --token-border-strong: #52525b;
+
+    /* Interactive */
+    --token-interactive-primary: #6366f1;
+    --token-interactive-primary-hover: #818cf8;
+    --token-interactive-primary-text: #ffffff;
+    --token-interactive-secondary: #27272a;
+    --token-interactive-secondary-hover: #3f3f46;
+    --token-interactive-secondary-text: #fafafa;
+    --token-interactive-destructive: #ef4444;
+    --token-interactive-destructive-hover: #f87171;
+    --token-interactive-focus-ring: rgba(99, 102, 241, 0.5);
+
+    /* Status */
+    --token-status-success: #22c55e;
+    --token-status-success-bg: #052e16;
+    --token-status-warning: #f59e0b;
+    --token-status-warning-bg: #451a03;
+    --token-status-error: #ef4444;
+    --token-status-error-bg: #450a0a;
+    --token-status-info: #3b82f6;
+    --token-status-info-bg: #172554;
+
+    /* Table */
+    --token-table-header-bg: #18181b;
+    --token-table-header-text: #e4e4e7;
+    --token-table-row-bg: #09090b;
+    --token-table-row-alt-bg: #0f0f12;
+    --token-table-row-hover: #1c1c1f;
+    --token-table-border: #27272a;
   }
 }
+
+/* ----- Layer 2: Tailwind @theme Bridge ----- */
+
+@theme {
+  /* Colors — Surface */
+  --color-surface: var(--token-surface);
+  --color-surface-raised: var(--token-surface-raised);
+  --color-surface-elevated: var(--token-surface-elevated);
+  --color-surface-overlay: var(--token-surface-overlay);
+  --color-surface-nav: var(--token-surface-nav);
+
+  /* Colors — Text */
+  --color-text-primary: var(--token-text-primary);
+  --color-text-secondary: var(--token-text-secondary);
+  --color-text-muted: var(--token-text-muted);
+  --color-text-inverse: var(--token-text-inverse);
+  --color-text-link: var(--token-text-link);
+  --color-text-link-hover: var(--token-text-link-hover);
+
+  /* Colors — Border */
+  --color-border-default: var(--token-border-default);
+  --color-border-subtle: var(--token-border-subtle);
+  --color-border-strong: var(--token-border-strong);
+
+  /* Colors — Interactive */
+  --color-interactive-primary: var(--token-interactive-primary);
+  --color-interactive-primary-hover: var(--token-interactive-primary-hover);
+  --color-interactive-primary-text: var(--token-interactive-primary-text);
+  --color-interactive-secondary: var(--token-interactive-secondary);
+  --color-interactive-secondary-hover: var(--token-interactive-secondary-hover);
+  --color-interactive-secondary-text: var(--token-interactive-secondary-text);
+  --color-interactive-destructive: var(--token-interactive-destructive);
+  --color-interactive-destructive-hover: var(--token-interactive-destructive-hover);
+  --color-interactive-focus-ring: var(--token-interactive-focus-ring);
+
+  /* Colors — Status */
+  --color-status-success: var(--token-status-success);
+  --color-status-success-bg: var(--token-status-success-bg);
+  --color-status-warning: var(--token-status-warning);
+  --color-status-warning-bg: var(--token-status-warning-bg);
+  --color-status-error: var(--token-status-error);
+  --color-status-error-bg: var(--token-status-error-bg);
+  --color-status-info: var(--token-status-info);
+  --color-status-info-bg: var(--token-status-info-bg);
+
+  /* Colors — Table */
+  --color-table-header-bg: var(--token-table-header-bg);
+  --color-table-header-text: var(--token-table-header-text);
+  --color-table-row-bg: var(--token-table-row-bg);
+  --color-table-row-alt-bg: var(--token-table-row-alt-bg);
+  --color-table-row-hover: var(--token-table-row-hover);
+  --color-table-border: var(--token-table-border);
+
+  /* Font families */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-full: 9999px;
+}
+
+/* ----- Layer 3: Base Styles ----- */
 
 html,
 body {
@@ -17,22 +185,10 @@ body {
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--token-text-primary);
+  background: var(--token-surface);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
 }
 
 @media (prefers-color-scheme: dark) {

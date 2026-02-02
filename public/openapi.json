@@ -1,0 +1,367 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Kyokan API",
+    "description": "REST API for USDA FoodData Central SR Legacy and Foundation Foods data.\n\n**Kyokan** (供館) — \"provision hall\" in Japanese.\n\nProvides access to **8,158 foods** with nutrients, portions, categories, and cookability data.",
+    "version": "1.4.0"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Relative API base"
+    }
+  ],
+  "security": [],
+  "paths": {
+    "/foods": {
+      "get": {
+        "summary": "Search and filter foods",
+        "description": "Full-text search with optional filters for category, nutrient range, cooking state, preservation, processing, and cookability.",
+        "operationId": "searchFoods",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Full-text search query (uses PostgreSQL plainto_tsquery)",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "description": "Filter by food category ID",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "nutrientId",
+            "in": "query",
+            "description": "Filter by nutrient ID (requires nutrient to exist in food)",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "min",
+            "in": "query",
+            "description": "Minimum nutrient amount (requires nutrientId)",
+            "schema": { "type": "number" }
+          },
+          {
+            "name": "max",
+            "in": "query",
+            "description": "Maximum nutrient amount (requires nutrientId)",
+            "schema": { "type": "number" }
+          },
+          {
+            "name": "cookable",
+            "in": "query",
+            "description": "Filter by cookability assessment",
+            "schema": { "type": "boolean" }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "description": "Cooking state filter",
+            "schema": {
+              "type": "string",
+              "enum": ["unknown", "raw", "cooked"]
+            }
+          },
+          {
+            "name": "preservation",
+            "in": "query",
+            "description": "Preservation method filter",
+            "schema": {
+              "type": "string",
+              "enum": ["unknown", "fresh", "frozen", "canned", "dried", "cured", "pickled", "fermented", "smoked"]
+            }
+          },
+          {
+            "name": "processing",
+            "in": "query",
+            "description": "Physical processing filter",
+            "schema": {
+              "type": "string",
+              "enum": ["unknown", "whole", "ground", "sliced", "diced", "shredded", "pureed", "paste", "powder", "flour", "juice", "oil", "broth", "stock"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": { "type": "integer", "default": 1, "minimum": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "Items per page",
+            "schema": { "type": "integer", "default": 25, "minimum": 1, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of foods",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedFoods"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/foods/{fdcId}": {
+      "get": {
+        "summary": "Get food detail",
+        "description": "Returns detailed information for a single food, including all nutrients and portion sizes.",
+        "operationId": "getFoodDetail",
+        "parameters": [
+          {
+            "name": "fdcId",
+            "in": "path",
+            "required": true,
+            "description": "FDC ID of the food",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Food detail with nutrients and portions",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FoodDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Food not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "summary": "List food categories",
+        "description": "Returns all food categories, optionally with food counts.",
+        "operationId": "getCategories",
+        "parameters": [
+          {
+            "name": "includeCounts",
+            "in": "query",
+            "description": "Include count of foods per category",
+            "schema": { "type": "boolean", "default": false }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "$ref": "#/components/schemas/CategoriesResponse" },
+                    { "$ref": "#/components/schemas/CategoriesWithCountResponse" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/nutrients": {
+      "get": {
+        "summary": "List nutrients",
+        "description": "Returns all nutrients with optional search filtering.",
+        "operationId": "searchNutrients",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Case-insensitive partial match on nutrient name",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1, "minimum": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 25, "minimum": 1, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of nutrients",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedNutrients" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key authentication. Optional in development (when API_KEY env var is not set). Can also be passed as apiKey query parameter."
+      }
+    },
+    "schemas": {
+      "FoodListItem": {
+        "type": "object",
+        "required": ["fdcId", "description", "categoryId"],
+        "properties": {
+          "fdcId": { "type": "integer", "description": "Unique FDC identifier" },
+          "description": { "type": "string", "description": "Food name/description" },
+          "categoryId": { "type": ["integer", "null"], "description": "Category ID" },
+          "categoryName": { "type": "string", "description": "Category name" },
+          "cookingState": { "type": "string", "enum": ["unknown", "raw", "cooked"] },
+          "cookingMethods": { "type": "array", "items": { "type": "string" } },
+          "preservation": { "type": "string" },
+          "processing": { "type": "string" }
+        }
+      },
+      "FoodDetail": {
+        "type": "object",
+        "required": ["fdcId", "description", "dataType", "publishedDate", "category", "nutrients", "portions"],
+        "properties": {
+          "fdcId": { "type": "integer" },
+          "description": { "type": "string" },
+          "dataType": { "type": "string" },
+          "publishedDate": { "type": ["string", "null"], "format": "date" },
+          "category": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/CategoryInfo" },
+              { "type": "null" }
+            ]
+          },
+          "nutrients": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/NutrientInfo" }
+          },
+          "portions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PortionInfo" }
+          }
+        }
+      },
+      "NutrientInfo": {
+        "type": "object",
+        "required": ["nutrientId", "name", "unit", "amount"],
+        "properties": {
+          "nutrientId": { "type": "integer" },
+          "name": { "type": "string" },
+          "unit": { "type": "string" },
+          "amount": { "type": "number" }
+        }
+      },
+      "NutrientListItem": {
+        "type": "object",
+        "required": ["nutrientId", "name", "unit", "rank", "isEnergy"],
+        "properties": {
+          "nutrientId": { "type": "integer" },
+          "name": { "type": "string" },
+          "unit": { "type": "string" },
+          "rank": { "type": ["integer", "null"] },
+          "isEnergy": { "type": "boolean" }
+        }
+      },
+      "PortionInfo": {
+        "type": "object",
+        "required": ["gramWeight", "amount", "unit", "modifier"],
+        "properties": {
+          "gramWeight": { "type": "number" },
+          "amount": { "type": ["number", "null"] },
+          "unit": { "type": ["string", "null"] },
+          "modifier": { "type": ["string", "null"] }
+        }
+      },
+      "CategoryInfo": {
+        "type": "object",
+        "required": ["categoryId", "name"],
+        "properties": {
+          "categoryId": { "type": "integer" },
+          "name": { "type": "string" }
+        }
+      },
+      "CategoryWithCount": {
+        "type": "object",
+        "required": ["categoryId", "name", "foodCount"],
+        "properties": {
+          "categoryId": { "type": "integer" },
+          "name": { "type": "string" },
+          "foodCount": { "type": "integer" }
+        }
+      },
+      "PaginatedFoods": {
+        "type": "object",
+        "required": ["items", "total", "page", "pageSize"],
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/FoodListItem" } },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "pageSize": { "type": "integer" }
+        }
+      },
+      "PaginatedNutrients": {
+        "type": "object",
+        "required": ["items", "total", "page", "pageSize"],
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/NutrientListItem" } },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "pageSize": { "type": "integer" }
+        }
+      },
+      "CategoriesResponse": {
+        "type": "object",
+        "required": ["categories"],
+        "properties": {
+          "categories": { "type": "array", "items": { "$ref": "#/components/schemas/CategoryInfo" } }
+        }
+      },
+      "CategoriesWithCountResponse": {
+        "type": "object",
+        "required": ["categories"],
+        "properties": {
+          "categories": { "type": "array", "items": { "$ref": "#/components/schemas/CategoryWithCount" } }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": ["code", "message"],
+            "properties": {
+              "code": { "type": "string", "enum": ["BAD_REQUEST", "UNAUTHORIZED", "NOT_FOUND", "INTERNAL_ERROR"] },
+              "message": { "type": "string" },
+              "details": { "type": "object" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

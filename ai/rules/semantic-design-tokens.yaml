@@ -1,0 +1,73 @@
+# yaml-language-server: $schema=schema.json
+
+rule: semantic-design-tokens
+status: active
+created: "2026-02-02"
+
+scope:
+  - "src/app/globals.css"
+  - "src/**/*.tsx"
+  - "src/**/*.css"
+  - "eslint.config.mjs"
+  - "eslint-rules/"
+
+summary: >
+  All visual styling MUST use semantic design tokens. No hardcoded CSS color
+  values are permitted in component code.
+
+rationale:
+  - key: consistency_across_themes
+    detail: >
+      Semantic tokens ensure light and dark modes are always in sync. A single
+      token definition controls both appearances. Hardcoded values break when
+      themes change and create visual inconsistencies.
+
+  - key: maintainability
+    detail: >
+      Centralizing all visual values in globals.css means a palette change
+      requires editing one file, not hunting through dozens of components.
+      This is critical for a data-heavy app with tables, cards, navigation,
+      and status indicators.
+
+  - key: enforceability
+    detail: >
+      The custom ESLint rule (no-hardcoded-css) catches violations at lint
+      time. CI will block PRs that introduce hardcoded colors, ensuring the
+      system cannot erode over time.
+
+  - key: accessibility
+    detail: >
+      Semantic tokens make it possible to verify contrast ratios at the token
+      level rather than per-component. When tokens have guaranteed contrast,
+      every component that uses them inherits accessible color combinations.
+
+guidance:
+  - >
+    NEVER use raw Tailwind color classes such as bg-white, text-gray-500,
+    border-red-200, etc. These do not exist in the theme and will produce
+    unstyled output.
+  - >
+    ALWAYS use semantic classes: bg-surface, bg-surface-raised,
+    text-text-primary, text-text-secondary, border-border-default,
+    bg-interactive-primary, bg-status-success-bg, bg-table-header-bg, etc.
+  - >
+    NEVER use inline styles with hardcoded hex, rgb(), or hsl() values.
+    If a CSS custom property is needed inline, reference a token:
+    style={{ color: 'var(--token-text-primary)' }}.
+  - >
+    NEVER use Tailwind arbitrary value syntax for colors, e.g.,
+    bg-[#ff0000] or text-[rgb(0,0,0)]. Use a token instead.
+  - >
+    When adding a new visual concept that does not map to an existing token,
+    add a new token to globals.css in BOTH :root and the dark media query,
+    add a corresponding @theme entry, then use the resulting class.
+  - >
+    Token naming convention: --token-{category}-{variant}.
+    Categories: surface, text, border, interactive, status, table.
+  - >
+    Spacing uses Tailwind's default scale (p-4, gap-6, etc.) which is
+    acceptable because Tailwind v4's spacing scale is already token-based
+    internally.
+  - >
+    Typography uses the --font-sans and --font-mono families defined in
+    @theme, which map to the Geist fonts loaded in layout.tsx.
