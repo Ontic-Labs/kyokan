@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getCategories } from "@/lib/data/categories";
 import { CategoryWithCount } from "@/types/fdc";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Categories | Kyokon",
 };

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 
+// Opt out of static generation - needs DB at runtime
+export const dynamic = "force-dynamic";
+
 async function getStats() {
   const [foods, nutrients, categories] = await Promise.all([
     db.query<{ count: string }>("SELECT COUNT(*) as count FROM foods"),

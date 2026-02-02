@@ -5,6 +5,8 @@ import FoodResultsList from "@/components/food-results-list";
 import Pagination from "@/components/pagination";
 import { CategoryInfo } from "@/types/fdc";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Food Search | Kyokon",
 };

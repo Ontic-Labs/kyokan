@@ -3,6 +3,8 @@ import { searchNutrients } from "@/lib/data/nutrients";
 import SearchInput from "@/components/search-input";
 import Pagination from "@/components/pagination";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Nutrients | Kyokon",
 };

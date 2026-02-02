@@ -27,7 +27,7 @@ dotenv.config({ path: ".env.local" });
 const COOKABILITY_THRESHOLD = 2;
 
 // Assessment version (semantic version, bump when rules change)
-const ASSESSMENT_VERSION = "1.3.0";
+const ASSESSMENT_VERSION = "1.4.0";
 
 // ============================================
 // Veto group mapping (for scoring)
@@ -413,6 +413,9 @@ function assessNutrients(
 const HARD_VETO_FLAGS = new Set([
   "CATEGORY_NON_COOKING",
   "CATEGORY_PREPARED",
+  "CATEGORY_INFANT",
+  "LEXICAL_SUPPLEMENT",
+  "NUTRIENT_PROTEIN_ISOLATE",
 ]);
 
 function isCookable(food: FoodAssessment): boolean {
