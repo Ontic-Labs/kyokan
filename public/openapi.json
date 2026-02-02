@@ -19,7 +19,8 @@
     { "name": "Foods", "description": "Food search and detail endpoints" },
     { "name": "Categories", "description": "Food category endpoints" },
     { "name": "Nutrients", "description": "Nutrient listing endpoints" },
-    { "name": "Canonicals", "description": "Canonical ingredient aggregate endpoints" },
+    { "name": "Ingredients", "description": "Recipe-first canonical ingredient endpoints" },
+    { "name": "Canonicals", "description": "Canonical ingredient aggregate endpoints (legacy)" },
     { "name": "Admin", "description": "Administrative endpoints (requires ADMIN_SECRET)" }
   ],
   "paths": {
@@ -80,7 +81,7 @@
             "description": "Preservation method filter",
             "schema": {
               "type": "string",
-              "enum": ["unknown", "fresh", "frozen", "canned", "dried", "cured", "pickled", "fermented", "smoked"]
+              "enum": ["unknown", "fresh", "frozen", "canned", "dried", "cured", "pickled", "fermented", "smoked", "shelf_stable"]
             }
           },
           {
@@ -191,6 +192,129 @@
                     { "$ref": "#/components/schemas/CategoriesWithCountResponse" }
                   ]
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ingredients": {
+      "get": {
+        "tags": ["Ingredients"],
+        "summary": "List canonical ingredients",
+        "description": "Browse and search recipe-first canonical ingredients. Each ingredient represents a real recipe term (e.g. 'ground beef', 'salt') mapped to FDC foods with aggregated nutrient boundaries.",
+        "operationId": "searchIngredients",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Case-insensitive partial match on ingredient name",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "hasNutrients",
+            "in": "query",
+            "description": "Filter to only ingredients with computed nutrient data",
+            "schema": { "type": "boolean" }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1, "minimum": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": { "type": "integer", "default": 25, "minimum": 1, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of canonical ingredients",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedIngredients" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ingredients/{slug}": {
+      "get": {
+        "tags": ["Ingredients"],
+        "summary": "Get ingredient detail with nutrient boundaries",
+        "description": "Returns detailed information for a canonical ingredient, including statistical nutrient values (median, p10/p90, p25/p75 boundaries) computed from all mapped FDC foods.",
+        "operationId": "getIngredientDetail",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "Canonical ingredient slug (e.g. 'ground-beef', 'salt', 'olive-oil')",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ingredient detail with nutrient boundaries",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IngredientDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Ingredient not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ingredients/resolve": {
+      "post": {
+        "tags": ["Ingredients"],
+        "summary": "Resolve ingredient names to canonical ingredients",
+        "description": "Accepts an array of free-text ingredient names (e.g. 'ground beef', 'kosher salt', '2 cups flour') and resolves each to its canonical ingredient with full nutrient boundaries. Resolution uses: direct slug match, alias lookup, then trigram fuzzy matching. Max 50 ingredients per request.",
+        "operationId": "resolveIngredients",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["ingredients"],
+                "properties": {
+                  "ingredients": {
+                    "type": "array",
+                    "items": { "type": "string", "minLength": 1 },
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "example": ["ground beef", "kosher salt", "olive oil", "flour"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resolution results for each input ingredient",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResolveResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
               }
             }
           }
@@ -647,6 +771,94 @@
         "required": ["categories"],
         "properties": {
           "categories": { "type": "array", "items": { "$ref": "#/components/schemas/CategoryWithCount" } }
+        }
+      },
+      "IngredientListItem": {
+        "type": "object",
+        "required": ["canonicalId", "ingredientName", "ingredientSlug", "syntheticFdcId", "frequency", "fdcCount", "hasNutrients"],
+        "properties": {
+          "canonicalId": { "type": "string", "format": "uuid" },
+          "ingredientName": { "type": "string", "description": "Canonical ingredient name from recipe corpus" },
+          "ingredientSlug": { "type": "string", "description": "URL-safe slug" },
+          "syntheticFdcId": { "type": ["integer", "null"], "description": "Synthetic FDC ID (9,000,000+ range)" },
+          "frequency": { "type": "integer", "description": "Recipe usage frequency" },
+          "fdcCount": { "type": "integer", "description": "Number of mapped FDC foods" },
+          "hasNutrients": { "type": "boolean", "description": "Whether nutrient boundaries have been computed" }
+        }
+      },
+      "IngredientNutrient": {
+        "type": "object",
+        "required": ["nutrientId", "name", "unit", "median", "p10", "p90", "p25", "p75", "min", "max", "nSamples"],
+        "properties": {
+          "nutrientId": { "type": "integer" },
+          "name": { "type": "string" },
+          "unit": { "type": "string" },
+          "median": { "type": "number", "description": "Median value per 100g across member foods" },
+          "p10": { "type": ["number", "null"], "description": "10th percentile (null if n < 3)" },
+          "p90": { "type": ["number", "null"], "description": "90th percentile (null if n < 3)" },
+          "p25": { "type": ["number", "null"], "description": "25th percentile (null if n < 3)" },
+          "p75": { "type": ["number", "null"], "description": "75th percentile (null if n < 3)" },
+          "min": { "type": ["number", "null"], "description": "Minimum observed value" },
+          "max": { "type": ["number", "null"], "description": "Maximum observed value" },
+          "nSamples": { "type": "integer", "description": "Number of member foods with this nutrient" }
+        }
+      },
+      "IngredientDetail": {
+        "type": "object",
+        "required": ["canonicalId", "ingredientName", "ingredientSlug", "syntheticFdcId", "frequency", "fdcCount", "nutrients"],
+        "properties": {
+          "canonicalId": { "type": "string", "format": "uuid" },
+          "ingredientName": { "type": "string" },
+          "ingredientSlug": { "type": "string" },
+          "syntheticFdcId": { "type": ["integer", "null"] },
+          "frequency": { "type": "integer", "description": "Recipe usage frequency" },
+          "fdcCount": { "type": "integer", "description": "Number of mapped FDC foods" },
+          "nutrients": { "type": "array", "items": { "$ref": "#/components/schemas/IngredientNutrient" } }
+        }
+      },
+      "ResolvedIngredient": {
+        "type": "object",
+        "required": ["input", "match"],
+        "properties": {
+          "input": { "type": "string", "description": "Original input string" },
+          "match": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": ["ingredientName", "ingredientSlug", "canonicalId", "syntheticFdcId", "frequency", "fdcCount", "nutrients"],
+                "properties": {
+                  "ingredientName": { "type": "string" },
+                  "ingredientSlug": { "type": "string" },
+                  "canonicalId": { "type": "string", "format": "uuid" },
+                  "syntheticFdcId": { "type": ["integer", "null"] },
+                  "frequency": { "type": "integer" },
+                  "fdcCount": { "type": "integer" },
+                  "nutrients": { "type": "array", "items": { "$ref": "#/components/schemas/IngredientNutrient" } }
+                }
+              },
+              { "type": "null" }
+            ],
+            "description": "Resolved canonical ingredient with nutrients, or null if unresolved"
+          }
+        }
+      },
+      "ResolveResponse": {
+        "type": "object",
+        "required": ["results", "resolved", "unresolved"],
+        "properties": {
+          "results": { "type": "array", "items": { "$ref": "#/components/schemas/ResolvedIngredient" } },
+          "resolved": { "type": "integer", "description": "Count of successfully resolved ingredients" },
+          "unresolved": { "type": "integer", "description": "Count of ingredients that could not be matched" }
+        }
+      },
+      "PaginatedIngredients": {
+        "type": "object",
+        "required": ["items", "total", "page", "pageSize"],
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/IngredientListItem" } },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "pageSize": { "type": "integer" }
         }
       },
       "CanonicalListItem": {

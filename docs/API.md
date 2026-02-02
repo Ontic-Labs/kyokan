@@ -1,5 +1,13 @@
 # Kyokon API Reference
 
+<div align="center">
+
+**Version 1.7.0** | **February 2026**
+
+*Complete REST API documentation for USDA FoodData Central data*
+
+</div>
+
 > REST API for USDA FoodData Central SR Legacy and Foundation Foods data.
 >
 > **Kyokon** (巨根) — it means exactly what you think it means. 🍆
@@ -18,6 +26,8 @@ Base URL: `http://localhost:3000/api` (development)
   - [GET /foods/:fdcId](#get-foodsfdcid)
   - [GET /categories](#get-categories)
   - [GET /nutrients](#get-nutrients)
+  - [GET /ingredients](#get-ingredients)
+  - [GET /ingredients/:slug](#get-ingredientsslug)
 - [Admin Endpoints](#admin-endpoints)
 - [Data Types](#data-types)
 - [Error Responses](#error-responses)
@@ -311,6 +321,121 @@ GET /api/nutrients?search=vitamin
 
 ---
 
+### GET /ingredients
+
+Browse and search canonical ingredients. Each ingredient represents a real recipe term (e.g., "ground beef", "salt") mapped to FDC foods with aggregated nutrient boundaries.
+
+#### Query Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `q` | string | Case-insensitive partial match on ingredient name |
+| `hasNutrients` | boolean | Filter to only ingredients with computed nutrient data |
+| `page` | integer | Page number |
+| `pageSize` | integer | Items per page |
+
+#### Example Request
+
+```
+GET /api/ingredients?q=beef&hasNutrients=true
+```
+
+#### Response
+
+```json
+{
+  "items": [
+    {
+      "canonicalId": "550e8400-e29b-41d4-a716-446655440000",
+      "ingredientName": "ground beef",
+      "ingredientSlug": "ground-beef",
+      "syntheticFdcId": 9000001,
+      "frequency": 12847,
+      "fdcCount": 24,
+      "hasNutrients": true
+    }
+  ],
+  "total": 42,
+  "page": 1,
+  "pageSize": 25,
+  "totalPages": 2
+}
+```
+
+---
+
+### GET /ingredients/:slug
+
+Get detailed information for a canonical ingredient, including statistical nutrient values (median, percentile boundaries) computed from all mapped FDC foods.
+
+#### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `slug` | string | Ingredient slug (e.g., `ground-beef`, `salt`, `olive-oil`) |
+
+#### Example Request
+
+```
+GET /api/ingredients/ground-beef
+```
+
+#### Response
+
+```json
+{
+  "canonicalId": "550e8400-e29b-41d4-a716-446655440000",
+  "ingredientName": "ground beef",
+  "ingredientSlug": "ground-beef",
+  "syntheticFdcId": 9000001,
+  "frequency": 12847,
+  "fdcCount": 24,
+  "nutrients": [
+    {
+      "nutrientId": 1003,
+      "name": "Protein",
+      "unit": "g",
+      "median": 17.5,
+      "p10": 14.2,
+      "p90": 21.8,
+      "p25": 15.6,
+      "p75": 19.4,
+      "min": 12.1,
+      "max": 26.3,
+      "nSamples": 24
+    },
+    {
+      "nutrientId": 1004,
+      "name": "Total lipid (fat)",
+      "unit": "g",
+      "median": 20.0,
+      "p10": 10.5,
+      "p90": 30.2,
+      "p25": 15.0,
+      "p75": 25.0,
+      "min": 5.0,
+      "max": 35.0,
+      "nSamples": 24
+    }
+  ]
+}
+```
+
+#### Nutrient Boundary Fields
+
+| Field | Description |
+|-------|-------------|
+| `median` | 50th percentile (middle value) |
+| `p10` | 10th percentile (lower bound, null if n < 3) |
+| `p90` | 90th percentile (upper bound, null if n < 3) |
+| `p25` | 25th percentile (1st quartile, null if n < 3) |
+| `p75` | 75th percentile (3rd quartile, null if n < 3) |
+| `min` | Minimum observed value |
+| `max` | Maximum observed value |
+| `nSamples` | Number of FDC foods with this nutrient |
+
+---
+
 ## Admin Endpoints
 
 Admin endpoints require the `X-Admin-Secret` header matching the server's `ADMIN_SECRET` environment variable.
@@ -441,6 +566,46 @@ Revoke an API key. The key will immediately stop working.
 |-------|------|-------------|
 | `categoryId` | integer | Category ID |
 | `name` | string | Category name |
+
+### IngredientListItem
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `canonicalId` | string (UUID) | Unique identifier |
+| `ingredientName` | string | Human-readable name from recipe corpus |
+| `ingredientSlug` | string | URL-safe slug |
+| `syntheticFdcId` | integer \| null | Synthetic FDC ID (9,000,000+ range) |
+| `frequency` | integer | Recipe usage frequency |
+| `fdcCount` | integer | Number of mapped FDC foods |
+| `hasNutrients` | boolean | Whether nutrient boundaries are computed |
+
+### IngredientDetail
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `canonicalId` | string (UUID) | Unique identifier |
+| `ingredientName` | string | Human-readable name |
+| `ingredientSlug` | string | URL-safe slug |
+| `syntheticFdcId` | integer \| null | Synthetic FDC ID |
+| `frequency` | integer | Recipe usage frequency |
+| `fdcCount` | integer | Number of mapped FDC foods |
+| `nutrients` | IngredientNutrient[] | Array of nutrient statistics |
+
+### IngredientNutrient
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `nutrientId` | integer | Nutrient ID |
+| `name` | string | Nutrient name |
+| `unit` | string | Unit (g, mg, µg, etc.) |
+| `median` | number | 50th percentile per 100g |
+| `p10` | number \| null | 10th percentile (null if n < 3) |
+| `p90` | number \| null | 90th percentile (null if n < 3) |
+| `p25` | number \| null | 25th percentile (null if n < 3) |
+| `p75` | number \| null | 75th percentile (null if n < 3) |
+| `min` | number | Minimum observed value |
+| `max` | number | Maximum observed value |
+| `nSamples` | integer | Number of samples |
 
 ---
 
@@ -670,8 +835,52 @@ validateItems(schema, items) -> T[]
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.7.0 | 2026-02-02 | Added `/ingredients` endpoints with nutrient boundaries |
+| 1.6.0 | 2026-02-02 | Added API key management system |
 | 1.4.0 | 2026-02-02 | Added Zod response validation for all endpoints |
 | 1.3.0 | 2026-02-02 | Added food state filters (`state`, `preservation`, `processing`) |
 | 1.2.0 | 2026-02-02 | Added `cookable` filter |
 | 1.1.0 | 2026-02-01 | Added Foundation Foods support |
 | 1.0.0 | 2026-02-01 | Initial release with SR Legacy |
+
+---
+
+<div style="page-break-before: always;"></div>
+
+## Appendix A: Complete Nutrient Reference
+
+Use `GET /api/nutrients` to retrieve the complete list of 228 nutrients. Common nutrients are listed in [Common Nutrient IDs](#common-nutrient-ids).
+
+## Appendix B: Category Reference
+
+| ID | Name | Food Count |
+|----|------|------------|
+| 1 | Dairy and Egg Products | 266 |
+| 2 | Spices and Herbs | 64 |
+| 3 | Baby Foods | 299 |
+| 4 | Fats and Oils | 173 |
+| 5 | Poultry Products | 360 |
+| 6 | Soups, Sauces, and Gravies | 492 |
+| 7 | Sausages and Luncheon Meats | 267 |
+| 8 | Breakfast Cereals | 405 |
+| 9 | Fruits and Fruit Juices | 328 |
+| 10 | Pork Products | 211 |
+| 11 | Vegetables and Vegetable Products | 786 |
+| 12 | Nut and Seed Products | 131 |
+| 13 | Beef Products | 747 |
+| 14 | Beverages | 282 |
+| 15 | Finfish and Shellfish Products | 234 |
+| 16 | Legumes and Legume Products | 374 |
+| 17 | Lamb, Veal, and Game Products | 285 |
+| 18 | Baked Products | 428 |
+| 19 | Sweets | 345 |
+| 20 | Cereal Grains and Pasta | 177 |
+| 21 | Fast Foods | 378 |
+| 22 | Meals, Entrees, and Side Dishes | 204 |
+| 23 | Snacks | 176 |
+| 24 | American Indian/Alaska Native Foods | 165 |
+| 25 | Restaurant Foods | 62 |
+
+---
+
+*Document generated: 2026-02-02 | API Version: 1.7.0*

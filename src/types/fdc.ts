@@ -176,6 +176,78 @@ export const CategoriesWithCountResponseSchema = z.object({
 });
 export type CategoriesWithCountResponse = z.infer<typeof CategoriesWithCountResponseSchema>;
 
+// ============================================================================
+// Canonical Ingredient (recipe-first) Schemas
+// ============================================================================
+
+// Nutrient with boundaries (for ingredient detail)
+export const IngredientNutrientSchema = z.object({
+  nutrientId: dbInt,
+  name: z.string(),
+  unit: z.string(),
+  median: dbNum,
+  p10: dbNum.nullable(),
+  p90: dbNum.nullable(),
+  p25: dbNum.nullable(),
+  p75: dbNum.nullable(),
+  min: dbNum.nullable(),
+  max: dbNum.nullable(),
+  nSamples: dbInt,
+});
+export type IngredientNutrient = z.infer<typeof IngredientNutrientSchema>;
+
+// Ingredient detail response (for /api/ingredients/:slug)
+export const IngredientDetailSchema = z.object({
+  canonicalId: z.string(),
+  ingredientName: z.string(),
+  ingredientSlug: z.string(),
+  syntheticFdcId: dbInt.nullable(),
+  frequency: dbInt,
+  fdcCount: dbInt,
+  nutrients: z.array(IngredientNutrientSchema),
+});
+export type IngredientDetail = z.infer<typeof IngredientDetailSchema>;
+
+// Ingredient list item (for /api/ingredients)
+export const IngredientListItemSchema = z.object({
+  canonicalId: z.string(),
+  ingredientName: z.string(),
+  ingredientSlug: z.string(),
+  syntheticFdcId: dbInt.nullable(),
+  frequency: dbInt,
+  fdcCount: dbInt,
+  hasNutrients: z.boolean(),
+});
+export type IngredientListItem = z.infer<typeof IngredientListItemSchema>;
+
+// Resolve request/response (for POST /api/ingredients/resolve)
+export const ResolveRequestSchema = z.object({
+  ingredients: z.array(z.string().min(1)).min(1).max(50),
+});
+export type ResolveRequest = z.infer<typeof ResolveRequestSchema>;
+
+export const ResolvedIngredientSchema = z.object({
+  input: z.string(),
+  match: z.object({
+    ingredientName: z.string(),
+    ingredientSlug: z.string(),
+    canonicalId: z.string(),
+    syntheticFdcId: dbInt.nullable(),
+    frequency: dbInt,
+    fdcCount: dbInt,
+    nutrients: z.array(IngredientNutrientSchema),
+  }).nullable(),
+});
+export type ResolvedIngredientResponse = z.infer<typeof ResolvedIngredientSchema>;
+
+export const ResolveResponseSchema = z.object({
+  results: z.array(ResolvedIngredientSchema),
+  resolved: dbInt,
+  unresolved: dbInt,
+});
+export type ResolveResponse = z.infer<typeof ResolveResponseSchema>;
+
+// ============================================================================
 // Raw JSON types from SR Legacy file
 
 export interface SRLegacyNutrient {
