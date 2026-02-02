@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getOffset, paginate, PaginatedResponse } from "@/lib/paging";
 
 export interface CanonicalListItem {
+  canonicalId: number;
   canonicalSlug: string;
   canonicalName: string;
   foodCount: number;
@@ -19,13 +20,13 @@ export async function searchCanonicals(
   const { q, page = 1, pageSize = 50 } = params;
   const offset = getOffset(page, pageSize);
 
-  const conditions: string[] = ["cn.level = 'base'"];
+  const conditions: string[] = ["ca.level = 'base'"];
   const values: unknown[] = [];
   let paramIndex = 1;
 
   if (q) {
     conditions.push(
-      `cn.canonical_name ILIKE '%' || $${paramIndex} || '%'`
+      `ca.canonical_name ILIKE '%' || $${paramIndex} || '%'`
     );
     values.push(q);
     paramIndex++;
@@ -34,20 +35,20 @@ export async function searchCanonicals(
   const whereClause = `WHERE ${conditions.join(" AND ")}`;
 
   const countSql = `
-    SELECT COUNT(DISTINCT cn.canonical_slug) as total
-    FROM food_canonical_names cn
+    SELECT COUNT(*) as total
+    FROM canonical_aggregates ca
     ${whereClause}
   `;
 
   const dataSql = `
     SELECT
-      cn.canonical_slug,
-      cn.canonical_name,
-      COUNT(*) as food_count
-    FROM food_canonical_names cn
+      ca.canonical_id,
+      ca.canonical_slug,
+      ca.canonical_name,
+      ca.food_count
+    FROM canonical_aggregates ca
     ${whereClause}
-    GROUP BY cn.canonical_slug, cn.canonical_name
-    ORDER BY food_count DESC, cn.canonical_name ASC
+    ORDER BY ca.food_count DESC, ca.canonical_name ASC
     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
   `;
 
@@ -56,6 +57,7 @@ export async function searchCanonicals(
   const [countResult, dataResult] = await Promise.all([
     db.query<{ total: string }>(countSql, values),
     db.query<{
+      canonical_id: string;
       canonical_slug: string;
       canonical_name: string;
       food_count: string;
@@ -64,6 +66,7 @@ export async function searchCanonicals(
 
   const total = parseInt(countResult.rows[0]?.total ?? "0", 10);
   const items: CanonicalListItem[] = dataResult.rows.map((row) => ({
+    canonicalId: parseInt(row.canonical_id, 10),
     canonicalSlug: row.canonical_slug,
     canonicalName: row.canonical_name,
     foodCount: parseInt(row.food_count, 10),

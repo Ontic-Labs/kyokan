@@ -217,7 +217,8 @@ async function filterCookable(): Promise<void> {
 
   const pipeline = chain([
     fs.createReadStream(INPUT_PATH),
-    parser({ jsonStreaming: true }),
+    parser(),
+    pick({ filter: "BrandedFoods" }),
     streamArray(),
   ]);
 

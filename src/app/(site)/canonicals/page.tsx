@@ -36,21 +36,45 @@ export default async function CanonicalsPage({
 
       <CanonicalSearchForm />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {results.items.map((item) => (
-          <Link
-            key={item.canonicalSlug}
-            href={`/foods?canonicalSlug=${item.canonicalSlug}`}
-            className="block p-4 bg-surface-raised border border-border-default rounded-md hover:border-border-strong transition-colors"
-          >
-            <div className="text-sm font-medium text-text-primary">
-              {item.canonicalName}
-            </div>
-            <div className="text-sm text-text-muted mt-1">
-              {item.foodCount.toLocaleString()} foods
-            </div>
-          </Link>
-        ))}
+      <div className="bg-surface-raised border border-border-default rounded-md overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border-default bg-surface-inset">
+              <th className="text-left px-4 py-2 font-medium text-text-secondary w-28">
+                ID
+              </th>
+              <th className="text-left px-4 py-2 font-medium text-text-secondary">
+                Canonical Name
+              </th>
+              <th className="text-right px-4 py-2 font-medium text-text-secondary w-24">
+                Foods
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.items.map((item) => (
+              <tr
+                key={item.canonicalId}
+                className="border-b border-border-default last:border-b-0 hover:bg-surface-inset transition-colors"
+              >
+                <td className="px-4 py-2 text-text-muted tabular-nums font-mono text-xs">
+                  {item.canonicalId.toLocaleString()}
+                </td>
+                <td className="px-4 py-2">
+                  <Link
+                    href={`/foods?canonicalSlug=${item.canonicalSlug}`}
+                    className="text-text-primary hover:text-accent-primary"
+                  >
+                    {item.canonicalName}
+                  </Link>
+                </td>
+                <td className="text-right px-4 py-2 text-text-muted tabular-nums">
+                  {item.foodCount.toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {results.items.length === 0 && (
