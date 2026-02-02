@@ -11,7 +11,10 @@
       "description": "Relative API base"
     }
   ],
-  "security": [],
+  "security": [
+    { "apiKey": [] },
+    { "bearerAuth": [] }
+  ],
   "tags": [
     { "name": "Foods", "description": "Food search and detail endpoints" },
     { "name": "Categories", "description": "Food category endpoints" },

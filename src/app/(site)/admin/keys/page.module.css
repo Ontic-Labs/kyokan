@@ -250,6 +250,12 @@
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
+  min-width: 90px;
+  transition: background 0.2s;
+}
+
+.copiedButton {
+  background: #16a34a !important;
 }
 
 .closeButton {

@@ -33,6 +33,27 @@ export default function AdminKeysPage() {
   const [newKeyExpiresDays, setNewKeyExpiresDays] = useState<number | ''>('');
   const [createdKey, setCreatedKey] = useState<NewKeyResponse | null>(null);
   const [creating, setCreating] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const fetchKeys = useCallback(async () => {
     try {
@@ -184,12 +205,10 @@ export default function AdminKeysPage() {
             <div className={styles.keyDisplay}>
               <code>{createdKey.key}</code>
               <button
-                onClick={() => {
-                  navigator.clipboard.writeText(createdKey.key);
-                  alert('Key copied to clipboard');
-                }}
+                className={copied ? styles.copiedButton : undefined}
+                onClick={() => copyToClipboard(createdKey.key)}
               >
-                Copy
+                {copied ? '✓ Copied!' : 'Copy'}
               </button>
             </div>
             <p><strong>Name:</strong> {createdKey.name}</p>
