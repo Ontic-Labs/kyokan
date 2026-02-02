@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import styles from './page.module.css';
+import { UI_STRINGS } from '@/constants/ui-strings';
 
 interface ApiKeyInfo {
   id: string;
@@ -64,16 +65,18 @@ export default function AdminKeysPage() {
       if (!res.ok) {
         if (res.status === 401) {
           setIsAuthenticated(false);
-          throw new Error('Invalid admin secret');
+          throw new Error(UI_STRINGS.adminKeys.errors.invalidAdminSecret);
         }
-        throw new Error('Failed to fetch keys');
+        throw new Error(UI_STRINGS.adminKeys.errors.failedFetch);
       }
       const data = await res.json();
       setKeys(data.keys);
       setIsAuthenticated(true);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(
+        err instanceof Error ? err.message : UI_STRINGS.adminKeys.errors.unknown
+      );
     } finally {
       setLoading(false);
     }
@@ -112,7 +115,7 @@ export default function AdminKeysPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to create key');
+        throw new Error(data.error || UI_STRINGS.adminKeys.errors.failedCreate);
       }
 
       const data: NewKeyResponse = await res.json();
@@ -121,14 +124,16 @@ export default function AdminKeysPage() {
       setNewKeyExpiresDays('');
       fetchKeys();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(
+        err instanceof Error ? err.message : UI_STRINGS.adminKeys.errors.unknown
+      );
     } finally {
       setCreating(false);
     }
   };
 
   const handleRevokeKey = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to revoke key "${name}"? This cannot be undone.`)) {
+    if (!confirm(UI_STRINGS.adminKeys.confirmRevoke(name))) {
       return;
     }
 
@@ -139,17 +144,19 @@ export default function AdminKeysPage() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to revoke key');
+        throw new Error(UI_STRINGS.adminKeys.errors.failedRevoke);
       }
 
       fetchKeys();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(
+        err instanceof Error ? err.message : UI_STRINGS.adminKeys.errors.unknown
+      );
     }
   };
 
   const formatDate = (date: string | null) => {
-    if (!date) return '—';
+    if (!date) return UI_STRINGS.adminKeys.noDate;
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -160,29 +167,31 @@ export default function AdminKeysPage() {
   };
 
   const getKeyStatus = (key: ApiKeyInfo) => {
-    if (key.revoked_at) return { label: 'Revoked', className: styles.statusRevoked };
-    if (key.expires_at && new Date(key.expires_at) < new Date()) {
-      return { label: 'Expired', className: styles.statusExpired };
+    if (key.revoked_at) {
+      return { label: UI_STRINGS.adminKeys.status.revoked, className: styles.statusRevoked };
     }
-    return { label: 'Active', className: styles.statusActive };
+    if (key.expires_at && new Date(key.expires_at) < new Date()) {
+      return { label: UI_STRINGS.adminKeys.status.expired, className: styles.statusExpired };
+    }
+    return { label: UI_STRINGS.adminKeys.status.active, className: styles.statusActive };
   };
 
   if (!isAuthenticated && !loading) {
     return (
       <div className={styles.container}>
-        <h1>Admin: API Keys</h1>
+        <h1>{UI_STRINGS.adminKeys.title}</h1>
         <form onSubmit={handleLogin} className={styles.loginForm}>
-          <label htmlFor="adminSecret">Admin Secret</label>
+          <label htmlFor="adminSecret">{UI_STRINGS.adminKeys.login.label}</label>
           <input
             id="adminSecret"
             type="password"
             value={adminSecret}
             onChange={(e) => setAdminSecret(e.target.value)}
-            placeholder="Enter ADMIN_SECRET"
+            placeholder={UI_STRINGS.adminKeys.login.placeholder}
             autoComplete="off"
           />
           <button type="submit" disabled={!adminSecret}>
-            Authenticate
+            {UI_STRINGS.adminKeys.login.button}
           </button>
           {error && <p className={styles.error}>{error}</p>}
         </form>
@@ -192,15 +201,15 @@ export default function AdminKeysPage() {
 
   return (
     <div className={styles.container}>
-      <h1>Admin: API Keys</h1>
+      <h1>{UI_STRINGS.adminKeys.title}</h1>
 
       {/* New Key Created Modal */}
       {createdKey && (
         <div className={styles.modal}>
           <div className={styles.modalContent}>
-            <h2>🔑 Key Created</h2>
+            <h2>{UI_STRINGS.adminKeys.modal.title}</h2>
             <p className={styles.warning}>
-              Copy this key now — it will not be shown again!
+              {UI_STRINGS.adminKeys.modal.warning}
             </p>
             <div className={styles.keyDisplay}>
               <code>{createdKey.key}</code>
@@ -208,16 +217,20 @@ export default function AdminKeysPage() {
                 className={copied ? styles.copiedButton : undefined}
                 onClick={() => copyToClipboard(createdKey.key)}
               >
-                {copied ? '✓ Copied!' : 'Copy'}
+                {copied ? UI_STRINGS.adminKeys.modal.copied : UI_STRINGS.adminKeys.modal.copy}
               </button>
             </div>
-            <p><strong>Name:</strong> {createdKey.name}</p>
-            <p><strong>Expires:</strong> {formatDate(createdKey.expires_at)}</p>
+            <p>
+              <strong>{UI_STRINGS.adminKeys.modal.nameLabel}</strong> {createdKey.name}
+            </p>
+            <p>
+              <strong>{UI_STRINGS.adminKeys.modal.expiresLabel}</strong> {formatDate(createdKey.expires_at)}
+            </p>
             <button
               className={styles.closeButton}
               onClick={() => setCreatedKey(null)}
             >
-              I&apos;ve saved the key
+              {UI_STRINGS.adminKeys.modal.saved}
             </button>
           </div>
         </div>
@@ -227,55 +240,55 @@ export default function AdminKeysPage() {
 
       {/* Create Key Form */}
       <section className={styles.section}>
-        <h2>Create New Key</h2>
+        <h2>{UI_STRINGS.adminKeys.create.title}</h2>
         <form onSubmit={handleCreateKey} className={styles.createForm}>
           <div className={styles.formRow}>
-            <label htmlFor="keyName">Name</label>
+            <label htmlFor="keyName">{UI_STRINGS.adminKeys.create.nameLabel}</label>
             <input
               id="keyName"
               type="text"
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
-              placeholder="e.g., Mobile App Production"
+              placeholder={UI_STRINGS.adminKeys.create.namePlaceholder}
               required
             />
           </div>
           <div className={styles.formRow}>
-            <label htmlFor="expiresDays">Expires in (days)</label>
+            <label htmlFor="expiresDays">{UI_STRINGS.adminKeys.create.expiresLabel}</label>
             <input
               id="expiresDays"
               type="number"
               min="1"
               value={newKeyExpiresDays}
               onChange={(e) => setNewKeyExpiresDays(e.target.value ? parseInt(e.target.value) : '')}
-              placeholder="Leave empty for no expiration"
+              placeholder={UI_STRINGS.adminKeys.create.expiresPlaceholder}
             />
           </div>
           <button type="submit" disabled={creating || !newKeyName}>
-            {creating ? 'Creating...' : 'Create Key'}
+            {creating ? UI_STRINGS.adminKeys.create.submitting : UI_STRINGS.adminKeys.create.submit}
           </button>
         </form>
       </section>
 
       {/* Keys List */}
       <section className={styles.section}>
-        <h2>API Keys</h2>
+        <h2>{UI_STRINGS.adminKeys.list.title}</h2>
         {loading ? (
-          <p>Loading...</p>
+          <p>{UI_STRINGS.adminKeys.list.loading}</p>
         ) : keys.length === 0 ? (
-          <p>No API keys yet. Create one above.</p>
+          <p>{UI_STRINGS.adminKeys.list.empty}</p>
         ) : (
           <table className={styles.keysTable}>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Prefix</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Expires</th>
-                <th>Last Used</th>
-                <th>Requests</th>
-                <th>Actions</th>
+                <th>{UI_STRINGS.adminKeys.list.headers.name}</th>
+                <th>{UI_STRINGS.adminKeys.list.headers.prefix}</th>
+                <th>{UI_STRINGS.adminKeys.list.headers.status}</th>
+                <th>{UI_STRINGS.adminKeys.list.headers.created}</th>
+                <th>{UI_STRINGS.adminKeys.list.headers.expires}</th>
+                <th>{UI_STRINGS.adminKeys.list.headers.lastUsed}</th>
+                <th>{UI_STRINGS.adminKeys.list.headers.requests}</th>
+                <th>{UI_STRINGS.adminKeys.list.headers.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -296,7 +309,7 @@ export default function AdminKeysPage() {
                           className={styles.revokeButton}
                           onClick={() => handleRevokeKey(key.id, key.name)}
                         >
-                          Revoke
+                          {UI_STRINGS.adminKeys.list.revoke}
                         </button>
                       )}
                     </td>

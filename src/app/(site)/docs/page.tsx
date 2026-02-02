@@ -1,18 +1,18 @@
 import SwaggerUIWrapper from "@/components/swagger-ui-wrapper";
+import { UI_STRINGS } from "@/constants/ui-strings";
 
 export const metadata = {
-  title: "API Documentation | Kyokon",
+  title: UI_STRINGS.docs.metadataTitle,
 };
 
 export default function DocsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-text-primary">
-        API Documentation
+        {UI_STRINGS.docs.title}
       </h1>
       <p className="text-sm text-text-secondary">
-        Interactive REST API documentation. Use the &ldquo;Try it out&rdquo;
-        button on any endpoint to make live requests.
+        {UI_STRINGS.docs.description}
       </p>
       <SwaggerUIWrapper />
     </div>

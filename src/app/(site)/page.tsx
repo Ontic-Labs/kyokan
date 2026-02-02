@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { UI_STRINGS } from "@/constants/ui-strings";
 
 // Opt out of static generation - needs DB at runtime
 export const dynamic = "force-dynamic";
@@ -20,33 +21,6 @@ async function getStats() {
   };
 }
 
-const cards = [
-  {
-    title: "Food Search",
-    description:
-      "Search 8,000+ foods with filters for category, nutrients, cooking state, and cookability.",
-    href: "/foods",
-  },
-  {
-    title: "Categories",
-    description:
-      "Browse all food categories with counts. Explore dairy, meats, vegetables, and more.",
-    href: "/categories",
-  },
-  {
-    title: "Nutrients",
-    description:
-      "Explore 228 nutrients. Find top foods for any nutrient like protein, iron, or vitamin C.",
-    href: "/nutrients",
-  },
-  {
-    title: "API Documentation",
-    description:
-      "Interactive Swagger UI for the REST API. Try endpoints directly in your browser.",
-    href: "/docs",
-  },
-];
-
 export default async function HomePage() {
   const stats = await getStats();
 
@@ -54,11 +28,10 @@ export default async function HomePage() {
     <div className="space-y-12">
       <div className="text-center space-y-4 py-8">
         <h1 className="text-3xl font-bold text-text-primary">
-          Kyokon
+          {UI_STRINGS.home.title}
         </h1>
         <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-          Search, browse, and explore USDA FoodData Central. SR Legacy and
-          Foundation Foods with nutrients, portions, and cookability data.
+          {UI_STRINGS.home.subtitle}
         </p>
 
         <div className="flex justify-center gap-8 pt-4">
@@ -66,25 +39,31 @@ export default async function HomePage() {
             <div className="text-2xl font-bold text-text-primary">
               {stats.foods.toLocaleString()}
             </div>
-            <div className="text-sm text-text-muted">Foods</div>
+            <div className="text-sm text-text-muted">
+              {UI_STRINGS.home.stats.foods}
+            </div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-text-primary">
               {stats.nutrients.toLocaleString()}
             </div>
-            <div className="text-sm text-text-muted">Nutrients</div>
+            <div className="text-sm text-text-muted">
+              {UI_STRINGS.home.stats.nutrients}
+            </div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-text-primary">
               {stats.categories.toLocaleString()}
             </div>
-            <div className="text-sm text-text-muted">Categories</div>
+            <div className="text-sm text-text-muted">
+              {UI_STRINGS.home.stats.categories}
+            </div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {cards.map((card) => (
+        {UI_STRINGS.home.cards.map((card) => (
           <Link
             key={card.href}
             href={card.href}
