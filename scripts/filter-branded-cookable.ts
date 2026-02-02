@@ -12,6 +12,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { parser } from "stream-json";
+import { pick } from "stream-json/filters/Pick";
 import { streamArray } from "stream-json/streamers/StreamArray";
 import { chain } from "stream-chain";
 
@@ -168,7 +169,8 @@ async function discoverCategories(): Promise<void> {
 
   const pipeline = chain([
     fs.createReadStream(INPUT_PATH),
-    parser({ jsonStreaming: true }),
+    parser(),
+    pick({ filter: "BrandedFoods" }),
     streamArray(),
   ]);
 

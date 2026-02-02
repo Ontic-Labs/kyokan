@@ -339,11 +339,11 @@ export async function getFoodDetail(
     portions,
     ...(food.canonical_base_name && {
       canonicalBaseName: food.canonical_base_name,
-      canonicalBaseSlug: food.canonical_base_slug,
+      canonicalBaseSlug: food.canonical_base_slug ?? undefined,
     }),
     ...(food.canonical_specific_name && {
       canonicalSpecificName: food.canonical_specific_name,
-      canonicalSpecificSlug: food.canonical_specific_slug,
+      canonicalSpecificSlug: food.canonical_specific_slug ?? undefined,
     }),
   };
 }
