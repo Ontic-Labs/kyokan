@@ -26,6 +26,7 @@
   "paths": {
     "/foods": {
       "get": {
+        "tags": ["Foods"],
         "summary": "Search and filter foods",
         "description": "Full-text search with optional filters for category, nutrient range, cooking state, preservation, processing, and cookability.",
         "operationId": "searchFoods",
@@ -136,6 +137,7 @@
     },
     "/foods/{fdcId}": {
       "get": {
+        "tags": ["Foods"],
         "summary": "Get food detail",
         "description": "Returns detailed information for a single food, including all nutrients and portion sizes.",
         "operationId": "getFoodDetail",
@@ -170,6 +172,7 @@
     },
     "/categories": {
       "get": {
+        "tags": ["Categories"],
         "summary": "List food categories",
         "description": "Returns all food categories, optionally with food counts.",
         "operationId": "getCategories",
@@ -323,6 +326,7 @@
     },
     "/canonicals": {
       "get": {
+        "tags": ["Canonicals"],
         "summary": "Search canonical aggregates",
         "description": "Browse and search canonical ingredient aggregates. Each aggregate represents a statistical composite of all foods sharing a canonical name.",
         "operationId": "searchCanonicals",
@@ -358,6 +362,7 @@
     },
     "/canonicals/{slug}": {
       "get": {
+        "tags": ["Canonicals"],
         "summary": "Get canonical aggregate detail",
         "description": "Returns detailed information for a canonical aggregate, including statistical nutrient values (median, p5/p95 boundaries) and source foods.",
         "operationId": "getCanonicalDetail",
@@ -392,6 +397,7 @@
     },
     "/nutrients": {
       "get": {
+        "tags": ["Nutrients"],
         "summary": "List nutrients",
         "description": "Returns all nutrients with optional search filtering.",
         "operationId": "searchNutrients",
@@ -798,8 +804,8 @@
           "p90": { "type": ["number", "null"], "description": "90th percentile (null if n < 3)" },
           "p25": { "type": ["number", "null"], "description": "25th percentile (null if n < 3)" },
           "p75": { "type": ["number", "null"], "description": "75th percentile (null if n < 3)" },
-          "min": { "type": ["number", "null"], "description": "Minimum observed value" },
-          "max": { "type": ["number", "null"], "description": "Maximum observed value" },
+          "min": { "type": "number", "description": "Minimum observed value" },
+          "max": { "type": "number", "description": "Maximum observed value" },
           "nSamples": { "type": "integer", "description": "Number of member foods with this nutrient" }
         }
       },

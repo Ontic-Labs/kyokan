@@ -190,8 +190,8 @@ export const IngredientNutrientSchema = z.object({
   p90: dbNum.nullable(),
   p25: dbNum.nullable(),
   p75: dbNum.nullable(),
-  min: dbNum.nullable(),
-  max: dbNum.nullable(),
+  min: dbNum,
+  max: dbNum,
   nSamples: dbInt,
 });
 export type IngredientNutrient = z.infer<typeof IngredientNutrientSchema>;

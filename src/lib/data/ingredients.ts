@@ -55,10 +55,11 @@ async function resolveCanonicalId(slug: string): Promise<{
       ci.canonical_slug,
       ci.synthetic_fdc_id,
       ci.total_count,
-      (SELECT COUNT(*) FROM canonical_fdc_membership cfm
-       WHERE cfm.canonical_id = ci.canonical_id) AS fdc_count
+      COUNT(cfm.fdc_id)::text AS fdc_count
     FROM canonical_ingredient ci
-    WHERE ci.canonical_slug = $1`,
+    LEFT JOIN canonical_fdc_membership cfm ON cfm.canonical_id = ci.canonical_id
+    WHERE ci.canonical_slug = $1
+    GROUP BY ci.canonical_id`,
     [slug]
   );
   if (direct.rows.length > 0) return direct.rows[0];
@@ -80,11 +81,12 @@ async function resolveCanonicalId(slug: string): Promise<{
       ci.canonical_slug,
       ci.synthetic_fdc_id,
       ci.total_count,
-      (SELECT COUNT(*) FROM canonical_fdc_membership cfm
-       WHERE cfm.canonical_id = ci.canonical_id) AS fdc_count
+      COUNT(cfm.fdc_id)::text AS fdc_count
     FROM canonical_ingredient_alias cia
     JOIN canonical_ingredient ci ON ci.canonical_id = cia.canonical_id
+    LEFT JOIN canonical_fdc_membership cfm ON cfm.canonical_id = ci.canonical_id
     WHERE cia.alias_norm ILIKE $1
+    GROUP BY ci.canonical_id, cia.alias_count
     ORDER BY cia.alias_count DESC
     LIMIT 1`,
     [nameFromSlug]
@@ -107,11 +109,12 @@ async function resolveCanonicalId(slug: string): Promise<{
       ci.canonical_slug,
       ci.synthetic_fdc_id,
       ci.total_count,
-      (SELECT COUNT(*) FROM canonical_fdc_membership cfm
-       WHERE cfm.canonical_id = ci.canonical_id) AS fdc_count,
+      COUNT(cfm.fdc_id)::text AS fdc_count,
       similarity(ci.canonical_name, $1) AS sim
     FROM canonical_ingredient ci
+    LEFT JOIN canonical_fdc_membership cfm ON cfm.canonical_id = ci.canonical_id
     WHERE similarity(ci.canonical_name, $1) >= 0.3
+    GROUP BY ci.canonical_id
     ORDER BY sim DESC, ci.canonical_rank ASC
     LIMIT 1`,
     [nameFromSlug]
@@ -136,8 +139,8 @@ export async function getIngredientBySlug(
     p90: number | null;
     p25: number | null;
     p75: number | null;
-    min_amount: number | null;
-    max_amount: number | null;
+    min_amount: number;
+    max_amount: number;
     n_samples: number;
   }>(
     `SELECT
@@ -244,13 +247,18 @@ export async function searchIngredients(
       ci.canonical_slug,
       ci.synthetic_fdc_id,
       ci.total_count,
-      (SELECT COUNT(*) FROM canonical_fdc_membership cfm
-       WHERE cfm.canonical_id = ci.canonical_id) AS fdc_count,
-      EXISTS (
-        SELECT 1 FROM canonical_ingredient_nutrients cin
-        WHERE cin.canonical_id = ci.canonical_id
-      ) AS has_nutrients
+      COALESCE(cfm.fdc_count, 0) AS fdc_count,
+      cin.canonical_id IS NOT NULL AS has_nutrients
     FROM canonical_ingredient ci
+    LEFT JOIN (
+      SELECT canonical_id, COUNT(*) AS fdc_count
+      FROM canonical_fdc_membership
+      GROUP BY canonical_id
+    ) cfm ON cfm.canonical_id = ci.canonical_id
+    LEFT JOIN (
+      SELECT DISTINCT canonical_id
+      FROM canonical_ingredient_nutrients
+    ) cin ON cin.canonical_id = ci.canonical_id
     ${whereClause}
     ORDER BY ci.canonical_rank ASC
     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -339,8 +347,8 @@ export async function resolveIngredients(
       p90: number | null;
       p25: number | null;
       p75: number | null;
-      min_amount: number | null;
-      max_amount: number | null;
+      min_amount: number;
+      max_amount: number;
       n_samples: number;
     }>(
       `SELECT
