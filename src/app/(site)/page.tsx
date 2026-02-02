@@ -51,7 +51,7 @@ export default async function HomePage() {
     <div className="space-y-12">
       <div className="text-center space-y-4 py-8">
         <h1 className="text-3xl font-bold text-text-primary">
-          Kyokan
+          Kyokon
         </h1>
         <p className="text-lg text-text-secondary max-w-2xl mx-auto">
           Search, browse, and explore USDA FoodData Central. SR Legacy and

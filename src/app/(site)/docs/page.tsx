@@ -1,7 +1,7 @@
 import SwaggerUIWrapper from "@/components/swagger-ui-wrapper";
 
 export const metadata = {
-  title: "API Documentation | Kyokan",
+  title: "API Documentation | Kyokon",
 };
 
 export default function DocsPage() {

@@ -4,7 +4,7 @@ import SearchInput from "@/components/search-input";
 import Pagination from "@/components/pagination";
 
 export const metadata = {
-  title: "Nutrients | Kyokan",
+  title: "Nutrients | Kyokon",
 };
 
 export default async function NutrientsPage({

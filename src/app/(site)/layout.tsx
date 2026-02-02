@@ -1,6 +1,7 @@
 import Link from "next/link";
 import NavLink from "@/components/nav-link";
 import MobileNav from "@/components/mobile-nav";
+import Logo from "@/components/logo";
 
 export default function SiteLayout({
   children,
@@ -9,14 +10,15 @@ export default function SiteLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col">
-      <nav className="relative border-b border-border-default bg-surface-nav sticky top-0 z-50">
+      <nav className="border-b border-border-default bg-surface-nav sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <Link
               href="/"
-              className="text-lg font-semibold text-text-primary tracking-tight"
+              className="flex items-center gap-2 text-lg font-semibold text-text-primary tracking-tight"
             >
-              Kyokan
+              <Logo size={28} />
+              Kyokon
             </Link>
             <div className="hidden sm:flex items-center gap-1">
               <NavLink href="/foods">Foods</NavLink>
@@ -34,7 +36,7 @@ export default function SiteLayout({
       </main>
 
       <footer className="border-t border-border-default py-6 text-center text-sm text-text-muted">
-        Kyokan &mdash; USDA FoodData Central Explorer
+        Kyokon &mdash; USDA FoodData Central Explorer
       </footer>
     </div>
   );

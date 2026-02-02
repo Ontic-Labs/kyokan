@@ -13,8 +13,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const food = await getFoodDetail(Number(fdcId));
   return {
     title: food
-      ? `${food.description} | Kyokan`
-      : "Food Not Found | Kyokan",
+      ? `${food.description} | Kyokon`
+      : "Food Not Found | Kyokon",
   };
 }
 

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kyokan — USDA FoodData Central Explorer",
+  title: "Kyokon — USDA FoodData Central Explorer",
   description:
     "Search, browse, and explore 8,000+ foods from the USDA FoodData Central database. SR Legacy and Foundation Foods with nutrients, portions, and cookability data.",
 };

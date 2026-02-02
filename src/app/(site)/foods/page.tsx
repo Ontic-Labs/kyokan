@@ -6,7 +6,7 @@ import Pagination from "@/components/pagination";
 import { CategoryInfo } from "@/types/fdc";
 
 export const metadata = {
-  title: "Food Search | Kyokan",
+  title: "Food Search | Kyokon",
 };
 
 export default async function FoodsPage({

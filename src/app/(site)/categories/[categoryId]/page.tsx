@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const category = await getCategoryById(Number(categoryId));
   return {
     title: category
-      ? `${category.name} | Kyokan`
-      : "Category Not Found | Kyokan",
+      ? `${category.name} | Kyokon`
+      : "Category Not Found | Kyokon",
   };
 }
 

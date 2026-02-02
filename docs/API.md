@@ -1,8 +1,8 @@
-# Kyokan API Reference
+# Kyokon API Reference
 
 > REST API for USDA FoodData Central SR Legacy and Foundation Foods data.
 >
-> **Kyokan** (供館) — "provision hall" in Japanese.
+> **Kyokon** (巨根) — it means exactly what you think it means. 🍆
 
 Base URL: `http://localhost:3000/api` (development)
 

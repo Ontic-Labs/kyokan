@@ -3,7 +3,7 @@ import { getCategories } from "@/lib/data/categories";
 import { CategoryWithCount } from "@/types/fdc";
 
 export const metadata = {
-  title: "Categories | Kyokan",
+  title: "Categories | Kyokon",
 };
 
 export default async function CategoriesPage() {

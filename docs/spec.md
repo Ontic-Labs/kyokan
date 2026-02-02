@@ -1,6 +1,6 @@
-# Kyokan — Project Specification
+# Kyokon — Project Specification
 
-> **Kyokan** (供館) — "provision hall" in Japanese.
+> **Kyokon** (巨根) — it means exactly what you think it means. 🍆
 >
 > Goal: A **Next.js App Router** project that imports the USDA **SR Legacy JSON (~8k–10k foods)** into PostgreSQL and serves it via API routes for **search**, **food detail**, **categories**, **nutrients**, and **nutrient/category filtering**.
 > Scope: API-first. UI optional later.

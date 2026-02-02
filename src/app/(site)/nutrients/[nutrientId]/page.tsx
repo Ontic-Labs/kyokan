@@ -14,8 +14,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const nutrient = await getNutrientById(Number(nutrientId));
   return {
     title: nutrient
-      ? `${nutrient.name} | Kyokan`
-      : "Nutrient Not Found | Kyokan",
+      ? `${nutrient.name} | Kyokon`
+      : "Nutrient Not Found | Kyokon",
   };
 }
 

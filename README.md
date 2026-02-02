@@ -1,6 +1,6 @@
-# Kyokan
+# Kyokon
 
-> **Kyokan** (供館) — "provision hall" in Japanese.
+> **Kyokon** (巨根) — it means exactly what you think it means. 🍆
 
 A Next.js API for USDA FoodData Central data with cookability assessment and food state classification.
 
