@@ -22,6 +22,7 @@ export default function FoodResultsList({ items }: FoodResultsListProps) {
             <th className="text-left px-4 py-2 font-medium">FDC ID</th>
             <th className="text-left px-4 py-2 font-medium">Description</th>
             <th className="text-left px-4 py-2 font-medium">Category</th>
+            <th className="text-left px-4 py-2 font-medium">Source</th>
           </tr>
         </thead>
         <tbody>
@@ -45,6 +46,9 @@ export default function FoodResultsList({ items }: FoodResultsListProps) {
               </td>
               <td className="px-4 py-2 text-sm text-text-secondary">
                 {item.categoryName ?? "—"}
+              </td>
+              <td className="px-4 py-2 text-sm text-text-secondary">
+                {item.dataType ?? "—"}
               </td>
             </tr>
           ))}

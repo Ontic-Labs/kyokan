@@ -47,6 +47,7 @@ interface FdcFood {
   fdcId: number;
   description: string;
   isCookable: boolean;
+  dataType: "sr_legacy" | "foundation" | "branded";
   baseName: string;
   baseSlug: string;
   specificName: string;
@@ -86,7 +87,7 @@ function loadRecipeIngredients(topN?: number): RecipeIngredient[] {
   return topN ? all.slice(0, topN) : all;
 }
 
-function loadFdcFoods(): FdcFood[] {
+async function loadFdcFoods(): Promise<FdcFood[]> {
   const foods: FdcFood[] = [];
 
   // SR Legacy
@@ -100,6 +101,7 @@ function loadFdcFoods(): FdcFood[] {
         fdcId: f.fdcId,
         description: f.description,
         isCookable: true,
+        dataType: "sr_legacy",
         baseName: canonical.baseName,
         baseSlug: canonical.baseSlug,
         specificName: canonical.specificName,
@@ -119,6 +121,7 @@ function loadFdcFoods(): FdcFood[] {
         fdcId: f.fdcId,
         description: f.description,
         isCookable: true,
+        dataType: "foundation",
         baseName: canonical.baseName,
         baseSlug: canonical.baseSlug,
         specificName: canonical.specificName,
@@ -130,9 +133,12 @@ function loadFdcFoods(): FdcFood[] {
   // Branded (cookable only, pre-filtered by filter-branded-cookable.ts)
   const brandedPath = "fdc/branded_cookable.jsonl";
   if (fs.existsSync(brandedPath)) {
-    const lines = fs.readFileSync(brandedPath, "utf-8").split("\n");
     let brandedCount = 0;
-    for (const line of lines) {
+    const rl = readline.createInterface({
+      input: fs.createReadStream(brandedPath, { encoding: "utf-8" }),
+      crlfDelay: Infinity,
+    });
+    for await (const line of rl) {
       if (!line.trim()) continue;
       try {
         const f = JSON.parse(line);
@@ -142,17 +148,21 @@ function loadFdcFoods(): FdcFood[] {
           fdcId: f.fdcId,
           description: f.description,
           isCookable: true,
+          dataType: "branded",
           baseName: canonical.baseName,
           baseSlug: canonical.baseSlug,
           specificName: canonical.specificName,
           specificSlug: canonical.specificSlug,
         });
         brandedCount++;
+        if (brandedCount % 50000 === 0) {
+          process.stdout.write(`\r  ${brandedCount.toLocaleString()} branded foods loaded...`);
+        }
       } catch {
         // Skip malformed lines
       }
     }
-    console.log(`  ${brandedCount} branded foods loaded`);
+    console.log(`\r  ${brandedCount.toLocaleString()} branded foods loaded    `);
   }
 
   return foods;
@@ -479,6 +489,71 @@ const RECIPE_ALIASES = new Map<string, string>([
   ["tomato puree", "tomato products"],
   // Apple
   ["apple cider", "apple"],
+  // Olive oil — FDC "Oil, olive, salad or cooking" → base "olive"
+  ["olive oil", "olive"],
+  // Zucchini — FDC "Squash, summer, zucchini"
+  ["zucchini", "zucchini"],
+  // Cayenne — FDC "Spices, pepper, red or cayenne"
+  ["cayenne", "red or cayenne pepper"],
+  // Coriander — FDC "Spices, coriander seed"
+  ["coriander", "coriander seed"],
+  // Cooking spray — FDC "Cooking spray, original"
+  ["cooking spray", "cooking spray"],
+  ["nonstick cooking spray", "cooking spray"],
+  // Strawberry → FDC "Strawberries, raw"
+  ["strawberry", "strawberries"],
+  // Long grain rice → FDC "Rice, white, long-grain, regular"
+  ["long grain rice", "rice"],
+  // Dry yeast → FDC "Leavening agents, yeast"
+  ["dry yeast", "yeast"],
+  // Crabmeat → FDC "Crustaceans, crab"
+  ["crabmeat", "crab"],
+  ["crab meat", "crab"],
+  // Linguine → FDC pasta
+  ["linguine", "pasta"],
+  ["fettuccine", "pasta"],
+  ["penne", "pasta"],
+  ["rotini", "pasta"],
+  // Prosciutto → FDC "Ham, prosciutto"
+  ["prosciutto", "prosciutto"],
+  // Artichoke hearts → FDC "Artichokes"
+  ["artichoke hearts", "artichokes"],
+  ["artichoke", "artichokes"],
+  // Dry sherry → FDC "Alcoholic beverage, wine, table, white"
+  ["dry sherry", "wine"],
+  ["sherry", "wine"],
+  // Cooking wine
+  ["cooking wine", "wine"],
+  ["red cooking wine", "wine"],
+  // Corn — FDC "Corn, sweet"
+  ["corn", "corn"],
+  // Pumpkin — FDC "Pumpkin, canned" or "Pumpkin, raw"
+  ["pumpkin puree", "pumpkin"],
+  ["canned pumpkin", "pumpkin"],
+  // Coconut — FDC base "coconut"
+  ["shredded coconut", "coconut"],
+  ["coconut flakes", "coconut"],
+  // Raisins — FDC "Raisins"
+  ["golden raisins", "raisins"],
+  // Cream of mushroom soup
+  ["cream of mushroom soup", "soup"],
+  ["cream of chicken soup", "soup"],
+  // Condensed milk
+  ["evaporated milk", "milk"],
+  // Whipped cream
+  ["cool whip", "cream"],
+  // Sprouts
+  ["bean sprouts", "bean"],
+  // Capers
+  ["capers", "capers"],
+  // Water chestnuts
+  ["water chestnuts", "water chestnuts"],
+  // Balsamic vinegar
+  ["balsamic vinegar", "vinegar"],
+  // Mozzarella
+  ["fresh mozzarella", "mozzarella cheese"],
+  // Ranch
+  ["ranch dressing", "salad dressing"],
 ]);
 
 function pluralVariant(name: string): string | null {
@@ -490,6 +565,50 @@ function pluralVariant(name: string): string | null {
 // ---------------------------------------------------------------------------
 // Matching strategies
 // ---------------------------------------------------------------------------
+
+/** Data source priority: SR Legacy (0) > Foundation (1) > Branded (2) */
+const DATA_TYPE_PRIORITY: Record<string, number> = {
+  sr_legacy: 0,
+  foundation: 1,
+  branded: 2,
+};
+
+/**
+ * Sort FDC foods by data source priority, returning their IDs.
+ * With many branded matches, prefer SR Legacy/Foundation results.
+ * If more than `cap` total matches, keep only SR Legacy + Foundation.
+ * If still over cap, keep only SR Legacy.
+ * Final fallback: return up to `cap` items sorted by priority.
+ */
+function prioritizeFdcMatches(foods: FdcFood[], cap: number): number[] {
+  if (foods.length === 0) return [];
+
+  // Sort by priority
+  const sorted = [...foods].sort(
+    (a, b) => DATA_TYPE_PRIORITY[a.dataType] - DATA_TYPE_PRIORITY[b.dataType]
+  );
+
+  if (sorted.length <= cap) {
+    return sorted.map((f) => f.fdcId);
+  }
+
+  // Over cap: try SR Legacy + Foundation only
+  const srAndFn = sorted.filter((f) => f.dataType !== "branded");
+  if (srAndFn.length > 0 && srAndFn.length <= cap) {
+    return srAndFn.map((f) => f.fdcId);
+  }
+
+  // Still over cap: try SR Legacy only
+  const srOnly = sorted.filter((f) => f.dataType === "sr_legacy");
+  if (srOnly.length > 0 && srOnly.length <= cap) {
+    return srOnly.map((f) => f.fdcId);
+  }
+
+  // Still over cap or no SR matches: return first `cap` items by priority
+  if (srOnly.length > 0) return srOnly.slice(0, cap).map((f) => f.fdcId);
+  if (srAndFn.length > 0) return srAndFn.slice(0, cap).map((f) => f.fdcId);
+  return sorted.slice(0, cap).map((f) => f.fdcId);
+}
 
 function matchIngredient(ingredient: RecipeIngredient, index: FdcIndex): MatchResult {
   // Use pre-normalized form for matching, but preserve original name as the
@@ -612,16 +731,17 @@ function matchIngredient(ingredient: RecipeIngredient, index: FdcIndex): MatchRe
     if (aliasMatch.length > 0) {
       return result(aliasMatch, "alias", 0.7);
     }
-    // Alias fallback: substring search with alias target
+    // Alias fallback: substring search with alias target, prioritized by data source
     if (alias.length >= 4) {
-      const aliasSubMatch: number[] = [];
+      const aliasSubFoods: FdcFood[] = [];
       for (const food of index.all) {
         if (food.description.toLowerCase().includes(alias)) {
-          aliasSubMatch.push(food.fdcId);
+          aliasSubFoods.push(food);
         }
       }
-      if (aliasSubMatch.length > 0 && aliasSubMatch.length <= 50) {
-        return result(aliasSubMatch, "alias", 0.6);
+      const aliasPrioritized = prioritizeFdcMatches(aliasSubFoods, 200);
+      if (aliasPrioritized.length > 0) {
+        return result(aliasPrioritized, "alias", 0.6);
       }
     }
   }
@@ -686,16 +806,17 @@ function matchIngredient(ingredient: RecipeIngredient, index: FdcIndex): MatchRe
     }
   }
 
-  // Strategy 8: Direct substring fallback (>= 5 chars, <= 50 matches)
+  // Strategy 8: Direct substring fallback (>= 5 chars, prioritized by data source)
   if (name.length >= 5) {
-    const descMatches: number[] = [];
+    const descMatchFoods: FdcFood[] = [];
     for (const food of index.all) {
       if (food.description.toLowerCase().includes(name)) {
-        descMatches.push(food.fdcId);
+        descMatchFoods.push(food);
       }
     }
-    if (descMatches.length > 0 && descMatches.length <= 50) {
-      return result(descMatches, "substring", 0.6);
+    const prioritized = prioritizeFdcMatches(descMatchFoods, 200);
+    if (prioritized.length > 0) {
+      return result(prioritized, "substring", 0.6);
     }
   }
 
@@ -916,7 +1037,7 @@ async function main() {
   console.log(`  ${ingredients.length} ingredients${topN ? ` (top ${topN})` : ""}`);
 
   console.log("Loading FDC foods and building canonical index...");
-  const foods = loadFdcFoods();
+  const foods = await loadFdcFoods();
   console.log(`  ${foods.length} FDC foods canonicalized`);
   const index = buildFdcIndex(foods);
   console.log(`  ${index.bySpecificName.size} unique canonical specific names`);
