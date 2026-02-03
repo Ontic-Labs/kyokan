@@ -530,6 +530,8 @@ export const CATEGORY_EXPECTATIONS = new Map<string, string[]>([
   ["walnuts", ["Nut and Seed Products"]],
   ["pecans", ["Nut and Seed Products"]],
   ["peanut", ["Legumes and Legume Products"]],
+  // Beverages
+  ["water", ["Beverages"]],
 ]);
 
 // ---------------------------------------------------------------------------
@@ -542,6 +544,14 @@ export const CATEGORY_EXPECTATIONS = new Map<string, string[]>([
  * Synonyms only add a bonus; they never substitute for missing token overlap.
  */
 export const SYNONYM_TABLE = new Map<string, string[][]>([
+  // Single-word ingredients that need disambiguation
+  ["onion", [["onions"]]],
+  ["eggs", [["egg", "whole"]]],
+  ["milk", [["milk", "whole"]]],
+  ["pepper", [["pepper", "black"]]],
+  ["water", [["water", "tap"]]],
+  ["garlic cloves", [["garlic"]]],
+  // Oils
   ["flour", [["wheat", "flour"]]],
   ["all purpose flour", [["wheat", "flour"]]],
   ["olive oil", [["oil", "olive"]]],
@@ -550,26 +560,34 @@ export const SYNONYM_TABLE = new Map<string, string[][]>([
   ["sesame oil", [["oil", "sesame"]]],
   ["peanut oil", [["oil", "peanut"]]],
   ["coconut oil", [["oil", "coconut"]]],
+  // Salts
   ["kosher salt", [["salt", "table"]]],
   ["sea salt", [["salt", "table"]]],
   ["table salt", [["salt", "table"]]],
+  // Herbs and alternates
   ["cilantro", [["coriander", "leaves"]]],
+  // Sugars — FDC uses "Sugars, brown" not "Sugar, brown"
   ["powdered sugar", [["sugar"]]],
   ["confectioners sugar", [["sugar"]]],
-  ["brown sugar", [["sugar", "brown"]]],
+  ["brown sugar", [["sugars", "brown"]]],
+  // Leavening
   ["baking soda", [["leavening", "baking", "soda"]]],
   ["baking powder", [["leavening", "baking", "powder"]]],
+  // Sauces
   ["soy sauce", [["soy", "sauce"]]],
   ["worcestershire sauce", [["worcestershire"]]],
+  // Dairy
   ["heavy cream", [["cream", "heavy"]]],
   ["sour cream", [["cream", "sour"]]],
   ["cream cheese", [["cheese", "cream"]]],
-  ["parmesan cheese", [["cheese", "parmesan"]]],
+  ["parmesan cheese", [["cheese", "parmesan", "hard"]]],
   ["cheddar cheese", [["cheese", "cheddar"]]],
   ["mozzarella cheese", [["cheese", "mozzarella"]]],
+  // Extracts
   ["dijon mustard", [["mustard"]]],
   ["vanilla extract", [["extract", "vanilla"]]],
   ["almond extract", [["extract", "almond"]]],
+  // Misc
   ["cornstarch", [["cornstarch"]]],
   ["breadcrumbs", [["bread", "crumbs"]]],
   ["dry breadcrumbs", [["bread", "crumbs"]]],

@@ -119,11 +119,14 @@ function getPool(): Pool {
 // ---------------------------------------------------------------------------
 
 async function loadFdcFoods(client: PoolClient): Promise<ProcessedFdcFood[]> {
+  // Join against fdc_cookability_assessment to exclude non-cooking foods
+  // (restaurant meals, baby foods, supplements, etc.) assessed in migration 002.
   const { rows } = await client.query(`
     SELECT f.fdc_id, f.description, f.data_type,
            fc.name AS category_name
     FROM foods f
     LEFT JOIN food_categories fc ON f.category_id = fc.category_id
+    JOIN fdc_cookability_assessment ca ON ca.fdc_id = f.fdc_id AND ca.is_cookable = TRUE
     WHERE f.is_synthetic = FALSE
     ORDER BY f.fdc_id
   `);

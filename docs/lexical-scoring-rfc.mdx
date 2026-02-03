@@ -80,7 +80,9 @@ Token weights use inverse document frequency to ensure that rare, discriminative
 
 $$w(t) = \frac{1}{\log(2 + df(t))}$$
 
-where $df(t)$ is the number of FDC foods containing token $t$. This is precomputed once at startup from the full corpus.
+where $df(t)$ is the number of catalog entries containing token $t$. This is precomputed once at startup from the full corpus.
+
+**Edge case**: If a token appears in zero catalog entries ($df = 0$), the formula yields $\frac{1}{\log 2} \approx 1.44$. Novel tokens receive high weight, which is intentional — rare user terms should strongly discriminate when they do match.
 
 The total ingredient weight is:
 
@@ -150,6 +152,8 @@ A synonym table maps recipe ingredient names to sets of FDC description tokens t
 "baking soda"   --> {leavening, baking, soda}
 ```
 
+The synonym table is defined inline in `src/lib/lexical-scorer.ts` (~40 entries) and versioned in source control.
+
 Satisfaction requires all tokens in the synonym set to appear in the candidate:
 
 $$\text{sat}(\Sigma, C) = \begin{cases} 1 & \text{if } \Sigma \subseteq T_C \\ 0 & \text{otherwise} \end{cases}$$
@@ -182,7 +186,7 @@ Pre-processing:
 
 - $T_I = \{\text{olive}, \text{oil}\}$
 - $T_C = \{\text{oil}, \text{olive}, \text{salad}, \text{cooking}\}$
-- Inverted name: "olive oil" (resolved from container category "Oil" + second segment "olive")
+- Inverted name: "olive oil" (see §4 for inverted naming resolution)
 
 Signal computation:
 
@@ -206,16 +210,17 @@ The system correctly identifies "Oil, olive, salad or cooking" as the intended m
 
 ---
 
-## 4. USDA Inverted Naming
+## 4. Catalog Naming Normalization
 
-FDC uses an inverted naming convention: "Oil, olive" instead of "olive oil." The system resolves this at load time using domain knowledge sets exported from the canonicalization layer:
+Many authoritative catalogs use inverted or structured naming conventions that differ from natural user language. The system resolves these at load time using configurable domain knowledge sets:
 
-- **Container categories** (oil, spices, nuts, seeds, sauce, ...): "Oil, olive" --> "olive oil"
-- **Protein bases** (chicken, beef, pork, ...): "Chicken, breast" --> "chicken breast"
-- **Product forms** (flour, juice, oil, powder, ...): "Wheat, flour" --> "wheat flour"
-- **Poultry classifiers** (broilers or fryers, roasting, ...): skipped to find actual cut
+- **Container categories**: "Oil, olive" → "olive oil"
+- **Entity bases**: "Chicken, breast" → "chicken breast"
+- **Product forms**: "Wheat, flour" → "wheat flour"
 
-The inverted name is one scoring input for Jaro-Winkler. It does not replace token-level matching. Raw description tokens always participate independently.
+The normalized name is one scoring input for Jaro-Winkler. It does not replace token-level matching. Raw description tokens always participate independently.
+
+See Appendix A for USDA FDC-specific normalization rules.
 
 ---
 
@@ -274,7 +279,19 @@ The scorer is pure functions with no I/O in the hot path. All FDC food data is p
 
 ---
 
-## 8. What This Architecture Does Not Do
+## 8. False-Negative Analysis
+
+The system prioritizes precision over recall. Some classes of valid matches may score below threshold:
+
+- **Novel ingredients**: User terms not in the synonym table and with no token overlap will score poorly. This is acceptable — false negatives flag for manual review; false positives silently corrupt data.
+- **Abbreviations**: "evoo" (extra virgin olive oil) has no token overlap with "Oil, olive" and will fail. The synonym table can be extended as abbreviations are discovered.
+- **Misspellings**: "oliv oil" loses one token's IDF weight. Jaro-Winkler provides partial recovery, but severe misspellings may drop below threshold.
+
+The `needs_review` tier (0.40–0.79) exists precisely to surface these cases without auto-accepting them.
+
+---
+
+## 9. What This Architecture Does Not Do
 
 - **No AI inference.** Scoring is deterministic arithmetic on pre-tokenized sets.
 - **No embedding similarity.** There are no vectors, no cosine similarity, no semantic search.
@@ -289,11 +306,16 @@ In a domain where a 25x error in fat content could affect medical decisions, "th
 
 This appendix captures nutrition-specific examples and constraints. The core algorithm is domain-agnostic.
 
-### A.1 USDA FDC Inverted Naming Examples
+### A.1 USDA FDC Inverted Naming Rules
 
-- "Oil, olive" → "olive oil"
-- "Spices, pepper, black" → "black pepper"
-- "Chicken, breast" → "chicken breast"
+FDC uses an inverted naming convention: "Oil, olive" instead of "olive oil." The system resolves this using domain knowledge sets:
+
+- **Container categories** (oil, spices, nuts, seeds, sauce, ...): "Oil, olive" → "olive oil"
+- **Protein bases** (chicken, beef, pork, ...): "Chicken, breast" → "chicken breast"
+- **Product forms** (flour, juice, oil, powder, ...): "Wheat, flour" → "wheat flour"
+- **Poultry classifiers** (broilers or fryers, roasting, ...): skipped to find actual cut
+
+These sets are exported from the canonicalization layer and versioned in source control.
 
 ### A.2 Tripwire Examples (Nutrition)
 
@@ -308,3 +330,11 @@ This appendix captures nutrition-specific examples and constraints. The core alg
 ### A.3 Worked Example (Nutrition)
 
 "olive oil" vs. "Oil, olive, salad or cooking" is a canonical case for token boundary safety and segment weighting.
+
+---
+
+## Changelog
+
+| Version | Date | Changes |
+|---------|------|--------|
+| 1.0 | 2026-02 | Initial release. Domain-agnostic framing with nutrition appendix. |
