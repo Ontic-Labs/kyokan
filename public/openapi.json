@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Kyokon API",
-      "description": "REST API for USDA FoodData Central SR Legacy, Foundation, and Branded foods data.\n\n**Kyokon** (巨根) — it means exactly what you think it means. 🍆 ([Google Translate](https://translate.google.com/?sl=ja&tl=en&text=%E5%B7%A8%E6%A0%B9&op=translate))\n\nProvides access to **8,158 foods** with nutrients, portions, categories, and cookability data.\n\n---\n\n### Authentication\n\nClick the **Authorize** button above to configure API access.\n\n**API Keys (required for all data endpoints):**\n- Pass via `Authorization: Bearer kyo_...` header or `X-API-Key: kyo_...` header\n- Keys are prefixed with `kyo_` and are 56 characters total\n- Request a key from your administrator via `/admin/keys`\n\n**Admin Access:**\n- Admin endpoints require `X-Admin-Secret` header matching server's `ADMIN_SECRET` env var",
+      "description": "REST API for USDA FoodData Central SR Legacy, Foundation, and Branded foods data.\n\n**Kyokon** (巨根) — it means exactly what you think it means. 🍆 ([Google Translate](https://translate.google.com/?sl=ja&tl=en&text=%E5%B7%A8%E6%A0%B9&op=translate))\n\nProvides access to **8,158 foods** with nutrients, portions, categories, and cookability data.\n\n---\n\n### Authentication\n\nAPI keys are simple strings configured on the server.\n\n**Usage (any of these methods):**\n- Query parameter: `?api_key=YOUR_KEY`\n- Header: `X-API-Key: YOUR_KEY`\n- Bearer token: `Authorization: Bearer YOUR_KEY`\n\n**Note:** If no API keys are configured on the server, the API is open.",
     "version": "1.7.0"
   },
   "servers": [
@@ -13,6 +13,7 @@
   ],
   "security": [
     { "apiKey": [] },
+    { "apiKeyHeader": [] },
     { "bearerAuth": [] }
   ],
   "tags": [
@@ -20,8 +21,7 @@
     { "name": "Categories", "description": "Food category endpoints" },
     { "name": "Nutrients", "description": "Nutrient listing endpoints" },
     { "name": "Ingredients", "description": "Recipe-first canonical ingredient endpoints" },
-    { "name": "Canonicals", "description": "Canonical ingredient aggregate endpoints (legacy)" },
-    { "name": "Admin", "description": "Administrative endpoints (requires ADMIN_SECRET)" }
+    { "name": "Canonicals", "description": "Canonical ingredient aggregate endpoints (legacy)" }
   ],
   "paths": {
     "/foods": {
@@ -430,224 +430,26 @@
           }
         }
       }
-    },
-    "/admin/keys": {
-      "get": {
-        "tags": ["Admin"],
-        "summary": "List API keys",
-        "description": "Returns all API keys with metadata. Does not return the full key, only the prefix.",
-        "operationId": "listApiKeys",
-        "security": [{ "adminSecret": [] }],
-        "responses": {
-          "200": {
-            "description": "List of API keys",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ApiKeyList" }
-              }
-            }
-          },
-          "401": {
-            "description": "Invalid or missing admin secret",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": ["Admin"],
-        "summary": "Create API key",
-        "description": "Creates a new API key. The full key is only returned once in this response.",
-        "operationId": "createApiKey",
-        "security": [{ "adminSecret": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["name"],
-                "properties": {
-                  "name": { "type": "string", "description": "Descriptive name for the key" },
-                  "expires_in_days": { "type": "integer", "description": "Days until expiration (optional)" }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "API key created",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ApiKeyCreated" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request body",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
-              }
-            }
-          },
-          "401": {
-            "description": "Invalid or missing admin secret",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/admin/keys/{id}": {
-      "get": {
-        "tags": ["Admin"],
-        "summary": "Get API key details",
-        "description": "Returns metadata for a single API key.",
-        "operationId": "getApiKey",
-        "security": [{ "adminSecret": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "API key ID (UUID)",
-            "schema": { "type": "string", "format": "uuid" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "API key details",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ApiKeyInfo" }
-              }
-            }
-          },
-          "404": {
-            "description": "API key not found",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": ["Admin"],
-        "summary": "Update API key",
-        "description": "Update the name of an API key.",
-        "operationId": "updateApiKey",
-        "security": [{ "adminSecret": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "API key ID (UUID)",
-            "schema": { "type": "string", "format": "uuid" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": { "type": "string", "description": "New name for the key" }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "API key updated",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ApiKeyInfo" }
-              }
-            }
-          },
-          "404": {
-            "description": "API key not found",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": ["Admin"],
-        "summary": "Revoke API key",
-        "description": "Revokes an API key. The key will immediately stop working.",
-        "operationId": "revokeApiKey",
-        "security": [{ "adminSecret": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "API key ID (UUID)",
-            "schema": { "type": "string", "format": "uuid" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "API key revoked",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": { "type": "boolean" },
-                    "revoked_at": { "type": "string", "format": "date-time" }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "API key not found",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
     "securitySchemes": {
       "apiKey": {
         "type": "apiKey",
+        "in": "query",
+        "name": "api_key",
+        "description": "API key passed as query parameter (like USDA FDC). Example: `?api_key=demo`"
+      },
+      "apiKeyHeader": {
+        "type": "apiKey",
         "in": "header",
         "name": "X-API-Key",
-        "description": "## API Key Authentication\n\n**Getting a key:**\n- Request from your administrator via the Admin UI at `/admin/keys`\n- Keys are prefixed with `kyo_` (56 characters total)\n\n**Usage:**\n- `Authorization: Bearer kyo_...` header (preferred)\n- `X-API-Key: kyo_...` header\n\n**Development mode:**\n- Leave empty and click Authorize — auth is optional in development"
+        "description": "API key passed via header. Example: `X-API-Key: demo`"
       },
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Pass API key as Bearer token: `Authorization: Bearer kyo_...`"
-      },
-      "adminSecret": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "X-Admin-Secret",
-        "description": "Admin secret for key management endpoints. Set via `ADMIN_SECRET` env var on the server."
+        "description": "API key as Bearer token. Example: `Authorization: Bearer demo`"
       }
     },
     "schemas": {
@@ -941,37 +743,6 @@
               "details": { "type": "object" }
             }
           }
-        }
-      },
-      "ApiKeyInfo": {
-        "type": "object",
-        "required": ["id", "name", "key_prefix", "created_at", "request_count"],
-        "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "name": { "type": "string", "description": "Descriptive name for the key" },
-          "key_prefix": { "type": "string", "description": "First 8 characters of the key (kyo_xxxx)" },
-          "created_at": { "type": "string", "format": "date-time" },
-          "expires_at": { "type": ["string", "null"], "format": "date-time" },
-          "revoked_at": { "type": ["string", "null"], "format": "date-time" },
-          "last_used_at": { "type": ["string", "null"], "format": "date-time" },
-          "request_count": { "type": "integer", "description": "Total number of requests made with this key" }
-        }
-      },
-      "ApiKeyList": {
-        "type": "object",
-        "required": ["keys"],
-        "properties": {
-          "keys": { "type": "array", "items": { "$ref": "#/components/schemas/ApiKeyInfo" } }
-        }
-      },
-      "ApiKeyCreated": {
-        "type": "object",
-        "required": ["id", "key", "name"],
-        "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "key": { "type": "string", "description": "Full API key (only shown once!)" },
-          "name": { "type": "string" },
-          "expires_at": { "type": ["string", "null"], "format": "date-time" }
         }
       }
     }

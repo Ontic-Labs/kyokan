@@ -1,20 +1,19 @@
 /**
- * Route-level API Key Authentication
+ * Simple API Key Authentication
  *
- * Provides a wrapper for Next.js route handlers that validates API keys
- * against the database. Works around Edge runtime limitations by doing
- * validation at the route level instead of middleware.
+ * Environment-variable-based API keys (like USDA FDC).
+ * Keys are defined in API_KEYS env var as comma-separated list.
  *
  * Usage:
- *   export const GET = withApiKey(async (request, context, apiKey) => {
- *     // apiKey contains the validated key metadata
+ *   export const GET = withApiKey(async (request, context) => {
  *     return NextResponse.json({ data: "..." });
  *   });
+ *
+ * Configuration:
+ *   API_KEYS=demo,prod_key_123,partner_abc
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "./db";
-import { hashApiKey, isValidKeyFormat, type ApiKey } from "./api-keys";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -23,13 +22,7 @@ import { hashApiKey, isValidKeyFormat, type ApiKey } from "./api-keys";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RouteContext = { params: Promise<any> };
 
-type AuthenticatedHandler = (
-  request: NextRequest,
-  context: RouteContext,
-  apiKey: ApiKey
-) => Promise<NextResponse>;
-
-type UnauthenticatedHandler = (
+type RouteHandler = (
   request: NextRequest,
   context: RouteContext
 ) => Promise<NextResponse>;
@@ -39,123 +32,93 @@ type UnauthenticatedHandler = (
 // ---------------------------------------------------------------------------
 
 /**
- * Check if authentication is required.
- * In development, auth is optional unless REQUIRE_API_KEY=true.
+ * Get valid API keys from environment variable.
+ * Supports comma-separated list: API_KEYS=key1,key2,key3
  */
-function isAuthRequired(): boolean {
-  return true;
+function getValidKeys(): Set<string> {
+  const keys = process.env.API_KEYS ?? "";
+  return new Set(
+    keys
+      .split(",")
+      .map((k) => k.trim())
+      .filter((k) => k.length > 0)
+  );
 }
 
 /**
- * Check for legacy single API_KEY env var (backward compatibility).
+ * Check if authentication is required.
+ * Disabled when no API_KEYS are configured.
  */
-function checkLegacyApiKey(provided: string): boolean {
-  const legacyKey = process.env.API_KEY;
-  if (!legacyKey) return false;
-  return timingSafeEqual(provided, legacyKey);
+function isAuthRequired(): boolean {
+  return getValidKeys().size > 0;
 }
 
 // ---------------------------------------------------------------------------
 // Key Extraction
 // ---------------------------------------------------------------------------
 
+/**
+ * Extract API key from request.
+ * Supports (in order of precedence):
+ *   - Authorization: Bearer <key>
+ *   - X-API-Key header
+ *   - api_key query parameter (USDA-style)
+ *   - apiKey query parameter (legacy)
+ */
 function extractApiKey(request: NextRequest): string | null {
+  // Bearer token
   const header = request.headers.get("authorization");
   if (header?.toLowerCase().startsWith("bearer ")) {
     return header.slice(7).trim();
   }
 
-  return (
-    request.headers.get("x-api-key") ??
-    request.nextUrl.searchParams.get("apiKey") ??
-    null
-  );
+  // X-API-Key header
+  const xApiKey = request.headers.get("x-api-key");
+  if (xApiKey) return xApiKey;
+
+  // Query parameters (api_key or apiKey)
+  const params = request.nextUrl.searchParams;
+  return params.get("api_key") ?? params.get("apiKey") ?? null;
 }
 
 // ---------------------------------------------------------------------------
-// Database Validation
+// Validation
 // ---------------------------------------------------------------------------
 
-interface DbApiKeyRow {
-  id: string;
-  key_prefix: string;
-  name: string;
-  description: string | null;
-  created_at: string;
-  expires_at: string | null;
-  last_used_at: string | null;
-  revoked_at: string | null;
-  created_by: string | null;
-  revoked_by: string | null;
-  request_count: string;
-}
-
-function rowToApiKey(row: DbApiKeyRow): ApiKey {
-  return {
-    id: row.id,
-    keyPrefix: row.key_prefix,
-    name: row.name,
-    description: row.description,
-    createdAt: new Date(row.created_at),
-    expiresAt: row.expires_at ? new Date(row.expires_at) : null,
-    lastUsedAt: row.last_used_at ? new Date(row.last_used_at) : null,
-    revokedAt: row.revoked_at ? new Date(row.revoked_at) : null,
-    createdBy: row.created_by,
-    revokedBy: row.revoked_by,
-    requestCount: Number(row.request_count),
-  };
-}
-
-async function validateKeyInDatabase(
-  plainTextKey: string
-): Promise<{ valid: boolean; key?: ApiKey; error?: string }> {
-  if (!isValidKeyFormat(plainTextKey)) {
-    return { valid: false, error: "Invalid API key format" };
+/**
+ * Timing-safe string comparison to prevent timing attacks.
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    // Still do the comparison to maintain constant time
+    let result = a.length ^ b.length;
+    for (let i = 0; i < a.length; i++) {
+      result |= a.charCodeAt(i) ^ (b.charCodeAt(i % b.length) || 0);
+    }
+    return result === 0;
   }
-
-  const keyHash = hashApiKey(plainTextKey);
-
-  try {
-    const result = await query<DbApiKeyRow>(
-      `SELECT * FROM api_keys WHERE key_hash = $1`,
-      [keyHash]
-    );
-
-    if (result.rows.length === 0) {
-      return { valid: false, error: "Invalid API key" };
-    }
-
-    const key = rowToApiKey(result.rows[0]);
-
-    // Check if revoked
-    if (key.revokedAt) {
-      return { valid: false, key, error: "API key has been revoked" };
-    }
-
-    // Check if expired
-    if (key.expiresAt && key.expiresAt < new Date()) {
-      return { valid: false, key, error: "API key has expired" };
-    }
-
-    // Update last_used_at and request_count (fire and forget)
-    query(
-      `UPDATE api_keys 
-       SET last_used_at = NOW(), request_count = request_count + 1 
-       WHERE id = $1`,
-      [key.id]
-    ).catch((err) => console.error("Failed to update key usage:", err));
-
-    return { valid: true, key };
-  } catch (err) {
-    // Database might not have api_keys table yet (pre-migration)
-    // Fall through to legacy key check
-    console.warn("API key validation failed (table may not exist):", err);
-    return { valid: false, error: "API key validation unavailable" };
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
   }
+  return result === 0;
+}
+
+/**
+ * Check if provided key is valid.
+ */
+function isValidKey(provided: string): boolean {
+  const validKeys = getValidKeys();
+  for (const key of validKeys) {
+    if (timingSafeEqual(provided, key)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------
-// Error Responses
+// Error Response
 // ---------------------------------------------------------------------------
 
 function unauthorizedResponse(message: string): NextResponse {
@@ -171,99 +134,42 @@ function unauthorizedResponse(message: string): NextResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Timing-Safe Comparison
-// ---------------------------------------------------------------------------
-
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    let result = a.length ^ b.length;
-    for (let i = 0; i < a.length; i++) {
-      result |= a.charCodeAt(i) ^ (b.charCodeAt(i % b.length) || 0);
-    }
-    return result === 0;
-  }
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return result === 0;
-}
-
-// ---------------------------------------------------------------------------
 // Route Wrapper
 // ---------------------------------------------------------------------------
 
 /**
  * Wrap a route handler with API key authentication.
  *
- * In development (without REQUIRE_API_KEY=true), requests without keys are allowed.
- * In production, all requests require a valid API key.
- *
- * The handler receives the validated ApiKey as a third argument.
+ * If no API_KEYS are configured, all requests are allowed.
+ * Otherwise, requests must provide a valid key.
  */
-export function withApiKey(handler: AuthenticatedHandler): UnauthenticatedHandler {
+export function withApiKey(handler: RouteHandler): RouteHandler {
   return async (request: NextRequest, context: RouteContext) => {
+    // If no keys configured, allow all requests
+    if (!isAuthRequired()) {
+      return handler(request, context);
+    }
+
     const provided = extractApiKey(request);
 
-    // No key provided
     if (!provided) {
-      if (!isAuthRequired()) {
-        // Development mode: allow unauthenticated access
-        // Pass a dummy key for type compatibility
-        const dummyKey: ApiKey = {
-          id: "dev-mode",
-          keyPrefix: "dev_",
-          name: "Development (unauthenticated)",
-          description: null,
-          createdAt: new Date(),
-          expiresAt: null,
-          lastUsedAt: null,
-          revokedAt: null,
-          createdBy: null,
-          revokedBy: null,
-          requestCount: 0,
-        };
-        return handler(request, context, dummyKey);
-      }
       return unauthorizedResponse(
-        "Missing API key. Provide via X-API-Key header or apiKey query parameter."
+        "Missing API key. Provide via api_key query parameter or X-API-Key header."
       );
     }
 
-    // Check legacy single API_KEY first (backward compatibility)
-    if (checkLegacyApiKey(provided)) {
-      const legacyKey: ApiKey = {
-        id: "legacy",
-        keyPrefix: provided.slice(0, 8),
-        name: "Legacy API Key (env var)",
-        description: null,
-        createdAt: new Date(),
-        expiresAt: null,
-        lastUsedAt: new Date(),
-        revokedAt: null,
-        createdBy: null,
-        revokedBy: null,
-        requestCount: 0,
-      };
-      return handler(request, context, legacyKey);
+    if (!isValidKey(provided)) {
+      return unauthorizedResponse("Invalid API key");
     }
 
-    // Validate against database
-    const validation = await validateKeyInDatabase(provided);
-
-    if (!validation.valid) {
-      return unauthorizedResponse(validation.error ?? "Invalid API key");
-    }
-
-    return handler(request, context, validation.key!);
+    return handler(request, context);
   };
 }
 
 /**
  * Wrap an admin route with ADMIN_SECRET authentication.
- * Used for bootstrapping (creating first API key) and key management.
  */
-export function withAdminAuth(handler: UnauthenticatedHandler): UnauthenticatedHandler {
+export function withAdminAuth(handler: RouteHandler): RouteHandler {
   return async (request: NextRequest, context: RouteContext) => {
     const adminSecret = process.env.ADMIN_SECRET;
 

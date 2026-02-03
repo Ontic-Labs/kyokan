@@ -469,6 +469,8 @@ export const CATEGORY_EXPECTATIONS = new Map<string, string[]>([
   ["broccoli", ["Vegetables and Vegetable Products"]],
   ["spinach", ["Vegetables and Vegetable Products"]],
   ["lettuce", ["Vegetables and Vegetable Products"]],
+  ["olive", ["Fruits and Fruit Juices", "Vegetables and Vegetable Products"]],
+  ["olives", ["Fruits and Fruit Juices", "Vegetables and Vegetable Products"]],
   // Fruits
   ["lemon", ["Fruits and Fruit Juices"]],
   ["lime", ["Fruits and Fruit Juices"]],
@@ -629,20 +631,18 @@ export function scoreCandidate(
   }
 
   // --- Signal 4: Category affinity ---
+  // Check ALL tokens with expectations; if ANY token's expected categories match
+  // the candidate's category, score = 1.0. This prevents "olive oil" failing
+  // category affinity against "Fats and Oils" just because "olive" is checked first.
   let affinityScore = 0;
-  let hasExpectation = false;
   for (const token of ingredient.coreTokens) {
     const expected = CATEGORY_EXPECTATIONS.get(token);
-    if (expected) {
-      hasExpectation = true;
-      if (candidate.categoryName && expected.includes(candidate.categoryName)) {
-        affinityScore = 1.0;
-      }
-      break;  // Use first matching expectation
+    if (expected && candidate.categoryName && expected.includes(candidate.categoryName)) {
+      affinityScore = 1.0;
+      break;  // Found a match, no need to check more
     }
   }
-  // If expectation exists but category doesn't match: stays at 0 (penalty via weight)
-  // If no expectation: neutral 0 (no penalty, just no bonus)
+  // If no expectation matches: neutral 0 (no penalty, just no bonus)
 
   // --- Signal 5: Synonym confirmation (gated) ---
   let synonymScore = 0;
