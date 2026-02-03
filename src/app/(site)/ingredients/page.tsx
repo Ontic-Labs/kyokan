@@ -123,7 +123,7 @@ export default async function IngredientsPage({
           </p>
         </div>
         <a
-          href="/api/ingredients/export"
+          href="/api/public/ingredients/export"
           download="kyokon-synthetic-ingredients.json"
           className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-sm border border-border-default text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
         >

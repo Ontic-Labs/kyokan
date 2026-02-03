@@ -23,8 +23,7 @@ export function errorResponse(
   const statusCode =
     status ??
     (code === "BAD_REQUEST" ? 400 : code === "UNAUTHORIZED" ? 401 : code === "NOT_FOUND" ? 404 : 500);
-
-  return NextResponse.json(
+  const body = JSON.stringify(
     {
       error: {
         code,
@@ -32,8 +31,14 @@ export function errorResponse(
         ...(details && { details }),
       },
     },
-    { status: statusCode }
+    null,
+    2
   );
+
+  return new NextResponse(body, {
+    status: statusCode,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 /**
