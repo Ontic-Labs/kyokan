@@ -1,0 +1,243 @@
+{
+  "info": {
+    "name": "Kyokon API",
+    "description": "Postman collection for kyokon.ai API endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://kyokon.ai/api" },
+    { "key": "apiKey", "value": "" },
+    { "key": "adminSecret", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Foods",
+      "item": [
+        {
+          "name": "Search foods",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/foods?q=salmon&page=1&pageSize=25",
+              "host": ["{{baseUrl}}"],
+              "path": ["foods"],
+              "query": [
+                { "key": "q", "value": "salmon" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "25" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get food detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/foods/123456",
+              "host": ["{{baseUrl}}"],
+              "path": ["foods", "123456"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "List categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Nutrients",
+      "item": [
+        {
+          "name": "Search nutrients",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/nutrients?search=vitamin&page=1&pageSize=25",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrients"],
+              "query": [
+                { "key": "search", "value": "vitamin" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "25" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ingredients",
+      "item": [
+        {
+          "name": "Search ingredients",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ingredients?q=garlic&hasNutrients=true&page=1&pageSize=25",
+              "host": ["{{baseUrl}}"],
+              "path": ["ingredients"],
+              "query": [
+                { "key": "q", "value": "garlic" },
+                { "key": "hasNutrients", "value": "true" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "25" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get ingredient detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ingredients/garlic",
+              "host": ["{{baseUrl}}"],
+              "path": ["ingredients", "garlic"]
+            }
+          }
+        },
+        {
+          "name": "Resolve ingredients batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-API-Key", "value": "{{apiKey}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ingredients\": [\"garlic\", \"olive oil\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ingredients/resolve",
+              "host": ["{{baseUrl}}"],
+              "path": ["ingredients", "resolve"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Canonicals",
+      "item": [
+        {
+          "name": "Search canonicals",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/canonicals?q=beef&page=1&pageSize=25",
+              "host": ["{{baseUrl}}"],
+              "path": ["canonicals"],
+              "query": [
+                { "key": "q", "value": "beef" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "25" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get canonical detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-API-Key", "value": "{{apiKey}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/canonicals/beef",
+              "host": ["{{baseUrl}}"],
+              "path": ["canonicals", "beef"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "List API keys",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Admin-Secret", "value": "{{adminSecret}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/keys",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "keys"]
+            }
+          }
+        },
+        {
+          "name": "Create API key",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Admin-Secret", "value": "{{adminSecret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Test Key\",\n  \"expires_in_days\": 30\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/keys",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "keys"]
+            }
+          }
+        },
+        {
+          "name": "Revoke API key",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "X-Admin-Secret", "value": "{{adminSecret}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/keys/{{keyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "keys", "{{keyId}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

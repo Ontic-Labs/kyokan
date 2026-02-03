@@ -78,6 +78,23 @@ Authentication is **optional** in development:
 
 Visit `/api-docs` to use the interactive API explorer. Click **Authorize** to enter your API key.
 
+### Postman Collection
+
+If you're testing the API with Postman, use the bundled collection so you get all endpoints, auth headers, and example queries out of the box.
+
+**Why it matters:** it standardizes how you hit the API (base URL, auth headers, pagination), so your team sees the same results and avoids “works on my machine” drift.
+
+**Import steps (Postman):**
+
+1. In Postman, go to **File → Import** (or press **Cmd+O / Ctrl+O**).
+2. Select the collection file at `docs/postman/kyokon.postman_collection.json`.
+3. Open the collection → **Variables** tab and set:
+  - `baseUrl` (e.g., `https://kyokon.ai/api`)
+  - `apiKey` (required for production)
+  - `adminSecret` (only for admin endpoints)
+
+All requests in the collection will inherit these values automatically.
+
 ---
 
 ## Pagination

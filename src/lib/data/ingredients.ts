@@ -402,6 +402,117 @@ export async function searchIngredients(
 }
 
 // ============================================================================
+// Full Export (all ingredients with nutrients, for JSON download)
+// ============================================================================
+
+export interface ExportedIngredient {
+  canonicalId: string;
+  ingredientName: string;
+  ingredientSlug: string;
+  syntheticFdcId: number | null;
+  frequency: number;
+  fdcCount: number;
+  canonicalRank: number;
+  nutrients: IngredientNutrient[];
+}
+
+export async function exportAllIngredients(): Promise<ExportedIngredient[]> {
+  // All ingredients ordered by rank
+  const ingredientResult = await db.query<{
+    canonical_id: string;
+    canonical_name: string;
+    canonical_slug: string;
+    canonical_rank: string;
+    synthetic_fdc_id: number | null;
+    total_count: string;
+    fdc_count: string;
+  }>(
+    `SELECT
+      ci.canonical_id,
+      ci.canonical_name,
+      ci.canonical_slug,
+      ci.canonical_rank::text,
+      ci.synthetic_fdc_id,
+      ci.total_count,
+      COALESCE(cfm.fdc_count, 0)::text AS fdc_count
+    FROM canonical_ingredient ci
+    LEFT JOIN (
+      SELECT canonical_id, COUNT(*) AS fdc_count
+      FROM canonical_fdc_membership
+      GROUP BY canonical_id
+    ) cfm ON cfm.canonical_id = ci.canonical_id
+    ORDER BY ci.canonical_rank ASC`
+  );
+
+  // All nutrients in one query, grouped in JS
+  const nutrientResult = await db.query<{
+    canonical_id: string;
+    nutrient_id: number;
+    name: string;
+    unit_name: string;
+    median: number;
+    p10: number | null;
+    p90: number | null;
+    p25: number | null;
+    p75: number | null;
+    min_amount: number;
+    max_amount: number;
+    n_samples: number;
+  }>(
+    `SELECT
+      cin.canonical_id,
+      n.nutrient_id,
+      n.name,
+      cin.unit_name,
+      cin.median,
+      cin.p10,
+      cin.p90,
+      cin.p25,
+      cin.p75,
+      cin.min_amount,
+      cin.max_amount,
+      cin.n_samples
+    FROM canonical_ingredient_nutrients cin
+    JOIN nutrients n ON n.nutrient_id = cin.nutrient_id
+    ORDER BY cin.canonical_id, n.nutrient_rank ASC NULLS LAST, n.name ASC`
+  );
+
+  // Group nutrients by canonical_id
+  const nutrientMap = new Map<string, IngredientNutrient[]>();
+  for (const nr of nutrientResult.rows) {
+    let list = nutrientMap.get(nr.canonical_id);
+    if (!list) {
+      list = [];
+      nutrientMap.set(nr.canonical_id, list);
+    }
+    list.push({
+      nutrientId: nr.nutrient_id,
+      name: nr.name,
+      unit: nr.unit_name,
+      median: nr.median,
+      p10: nr.p10,
+      p90: nr.p90,
+      p25: nr.p25,
+      p75: nr.p75,
+      min: nr.min_amount,
+      max: nr.max_amount,
+      nSamples: nr.n_samples,
+    });
+  }
+
+  return ingredientResult.rows.map((r) => ({
+    canonicalId: r.canonical_id,
+    ingredientName: r.canonical_name,
+    ingredientSlug: r.canonical_slug,
+    syntheticFdcId: r.synthetic_fdc_id,
+    frequency: Number(r.total_count),
+    fdcCount: Number(r.fdc_count),
+    canonicalRank: Number(r.canonical_rank),
+    nutrients: nutrientMap.get(r.canonical_id) ?? [],
+  }));
+}
+
+// ============================================================================
 // Batch Resolve (free-text ingredient names → canonical ingredients)
 // ============================================================================
 

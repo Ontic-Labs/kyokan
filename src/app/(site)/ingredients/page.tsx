@@ -90,13 +90,22 @@ export default async function IngredientsPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">
-          Canonical Ingredients
-        </h1>
-        <p className="text-sm text-text-secondary mt-1">
-          {results.total.toLocaleString()} recipe-first ingredients mapped to FDC foods with aggregated nutrient boundaries
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">
+            Canonical Ingredients
+          </h1>
+          <p className="text-sm text-text-secondary mt-1">
+            {results.total.toLocaleString()} recipe-first ingredients mapped to FDC foods with aggregated nutrient boundaries
+          </p>
+        </div>
+        <a
+          href="/api/ingredients/export"
+          download="kyokon-synthetic-ingredients.json"
+          className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-sm border border-border-default text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
+        >
+          Download JSON
+        </a>
       </div>
 
       <TableFilterBar
