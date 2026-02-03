@@ -1,4 +1,5 @@
 export const NAV_ITEMS = [
+  { href: "/recipes", label: "Recipes" },
   { href: "/ingredients", label: "Synthetic" },
   { href: "/canonicals", label: "Canonicals" },
   { href: "/foods", label: "Foods" },
