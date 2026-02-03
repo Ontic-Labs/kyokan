@@ -73,12 +73,12 @@ export default function KeyClaimModal({ isOpen, onClose }: KeyClaimModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={handleClose}
       />
 
       {/* Modal */}
-      <div className="relative bg-surface-card border border-border-default rounded-lg shadow-xl w-full max-w-md p-6">
+      <div className="relative bg-neutral-900 border border-neutral-700 rounded-lg shadow-xl w-full max-w-md p-6">
         <button
           onClick={handleClose}
           className="absolute top-4 right-4 text-text-muted hover:text-text-primary"
