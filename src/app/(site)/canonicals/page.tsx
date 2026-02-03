@@ -24,7 +24,7 @@ const columns: Column<CanonicalListItem>[] = [
     render: (item) => (
       <Link
         href={`/foods?canonicalSlug=${item.canonicalSlug}`}
-        className="text-text-primary hover:text-accent-primary"
+        className="text-text-link hover:text-text-link-hover hover:underline underline-offset-2"
       >
         {item.canonicalName}
       </Link>

@@ -18,7 +18,7 @@ const columns: Column<IngredientListItem>[] = [
     render: (item) => (
       <Link
         href={`/ingredients/${item.ingredientSlug}`}
-        className="text-text-primary hover:text-accent-primary"
+        className="text-text-link hover:text-text-link-hover hover:underline underline-offset-2"
       >
         {item.ingredientName}
       </Link>
