@@ -1,3 +1,13 @@
+export const NAV_ITEMS = [
+  { href: "/foods", label: "Foods" },
+  { href: "/categories", label: "Categories" },
+  { href: "/nutrients", label: "Nutrients" },
+  { href: "/ingredients", label: "Ingredients" },
+  { href: "/canonicals", label: "Canonicals" },
+  { href: "/docs", label: "API Docs" },
+  { href: "/blog", label: "Blog" },
+] as const;
+
 export const UI_STRINGS = {
   home: {
     title: "Kyokon",

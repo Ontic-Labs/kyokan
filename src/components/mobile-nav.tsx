@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import NavLink from "./nav-link";
+import { NAV_ITEMS } from "@/constants/ui-strings";
 
 export default function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -40,12 +41,11 @@ export default function MobileNav() {
       {open && (
         <div className="sm:hidden absolute top-14 left-0 right-0 bg-surface-nav border-b border-border-default shadow-sm z-50">
           <div className="flex flex-col px-4 py-3 gap-1" onClick={() => setOpen(false)}>
-            <NavLink href="/foods">Foods</NavLink>
-            <NavLink href="/canonicals">Canonicals</NavLink>
-            <NavLink href="/categories">Categories</NavLink>
-            <NavLink href="/nutrients">Nutrients</NavLink>
-            <NavLink href="/docs">API Docs</NavLink>
-            <NavLink href="/blog">Blog</NavLink>
+            {NAV_ITEMS.map((item) => (
+              <NavLink key={item.href} href={item.href}>
+                {item.label}
+              </NavLink>
+            ))}
           </div>
         </div>
       )}

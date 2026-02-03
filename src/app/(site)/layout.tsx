@@ -2,6 +2,7 @@ import Link from "next/link";
 import NavLink from "@/components/nav-link";
 import MobileNav from "@/components/mobile-nav";
 import Logo from "@/components/logo";
+import { NAV_ITEMS } from "@/constants/ui-strings";
 
 export default function SiteLayout({
   children,
@@ -21,12 +22,11 @@ export default function SiteLayout({
               Kyokon
             </Link>
             <div className="hidden sm:flex items-center gap-1">
-              <NavLink href="/foods">Foods</NavLink>
-              <NavLink href="/canonicals">Canonicals</NavLink>
-              <NavLink href="/categories">Categories</NavLink>
-              <NavLink href="/nutrients">Nutrients</NavLink>
-              <NavLink href="/docs">API Docs</NavLink>
-              <NavLink href="/blog">Blog</NavLink>
+              {NAV_ITEMS.map((item) => (
+                <NavLink key={item.href} href={item.href}>
+                  {item.label}
+                </NavLink>
+              ))}
             </div>
             <MobileNav />
           </div>

@@ -502,12 +502,22 @@ WHERE lower(description) LIKE '%ground beef%'
 ### 4.5 The Canonical IS the Recipe Name
 
 ```sql
-CREATE TABLE recipe_ingredient_mapping (
-  ingredient_name TEXT PRIMARY KEY,  -- "ground beef" (from recipes)
-  ingredient_slug TEXT NOT NULL,     -- "ground-beef"
-  frequency INT NOT NULL,            -- 5820
-  fdc_ids BIGINT[] NOT NULL,         -- [171077, 174036, ...]
-  synthetic_fdc_id BIGINT            -- 9200042 (our synthetic ID)
+-- The canonical registry (migration 009)
+CREATE TABLE canonical_ingredient (
+  canonical_id     uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  canonical_name   text NOT NULL,          -- "ground beef" (from recipes)
+  canonical_slug   text NOT NULL UNIQUE,   -- "ground-beef"
+  canonical_rank   bigint NOT NULL,        -- frequency-based priority (1 = most common)
+  total_count      bigint NOT NULL,        -- 5820
+  synthetic_fdc_id bigint UNIQUE           -- 9000042 (auto-assigned from sequence)
+);
+
+-- FDC membership is a proper join table, not an array
+CREATE TABLE canonical_fdc_membership (
+  canonical_id       uuid REFERENCES canonical_ingredient(canonical_id),
+  fdc_id             bigint REFERENCES foods(fdc_id),
+  membership_reason  text NOT NULL,        -- 'canonical_bridge', 'base_bridge', etc.
+  PRIMARY KEY (canonical_id, fdc_id)
 );
 ```
 
@@ -575,31 +585,32 @@ Frequency gives you signal about which names need human review.
            │ extract-recipe-ingredients.ts
            ▼
 ┌─────────────────────┐
-│ Ingredient Vocab    │
+│ recipe_ingredient   │
+│ _vocab              │
 │ (14,915 unique)     │
 │ with frequencies    │
 └──────────┬──────────┘
            │ map-recipe-ingredients.ts
            ▼
-┌─────────────────────────────────────────┐
-│ recipe_ingredient_mapping               │
-│ ┌─────────────┬───────┬───────────────┐ │
-│ │ ingredient  │ freq  │ fdc_ids       │ │
-│ ├─────────────┼───────┼───────────────┤ │
-│ │ ground beef │ 5820  │ [171077, ...] │ │
-│ │ salt        │ 85127 │ [173467, ...] │ │
-│ └─────────────┴───────┴───────────────┘ │
-└──────────┬──────────────────────────────┘
-           │ aggregate-synthetic-nutrients.ts
+┌──────────────────────────────────────────────┐
+│ canonical_ingredient + canonical_fdc_membership│
+│ ┌─────────────┬───────┬──────────────────┐   │
+│ │ canonical   │ count │ fdc_membership   │   │
+│ ├─────────────┼───────┼──────────────────┤   │
+│ │ ground beef │ 5820  │ 171077, 174036…  │   │
+│ │ salt        │ 85127 │ 173467, 173468…  │   │
+│ └─────────────┴───────┴──────────────────┘   │
+└──────────┬───────────────────────────────────┘
+           │ aggregate-recipe-nutrients.ts
            ▼
-┌─────────────────────────────────────────┐
-│ synthetic_ingredient_nutrients          │
-│ ┌─────────────┬────────┬───────┬──────┐ │
-│ │ ingredient  │ median │ p10   │ p90  │ │
-│ ├─────────────┼────────┼───────┼──────┤ │
-│ │ ground beef │ 254cal │ 176   │ 332  │ │
-│ └─────────────┴────────┴───────┴──────┘ │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│ canonical_ingredient_nutrients                │
+│ ┌─────────────┬────────┬───────┬──────┐      │
+│ │ canonical   │ median │ p10   │ p90  │      │
+│ ├─────────────┼────────┼───────┼──────┤      │
+│ │ ground beef │ 254cal │ 176   │ 332  │      │
+│ └─────────────┴────────┴───────┴──────┘      │
+└──────────────────────────────────────────────┘
 ```
 
 ---
@@ -708,30 +719,26 @@ This section defines the operational rules that prevent the two failure modes:
 **Extensions required:**
 
 ```sql
--- Essential for fuzzy matching
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Fuzzy matching for alias discovery and resolve endpoint
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+-- UUID generation (gen_random_uuid() is built-in for PG 13+, but uuid-ossp adds uuid_generate_v4())
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 ```
 
 **Recipe ingredient vocabulary (raw)**
 
 ```sql
 create table recipe_ingredient_vocab (
-  vocab_id bigserial primary key,
-  ingredient_text text not null,         -- "1 large egg" (raw, for debugging)
-  ingredient_norm text not null,         -- "egg" (parsed & normalized)
-  source text not null default 'unknown', -- 'us-corpus-2024', 'user-submitted'
-  count bigint not null default 1,
-  
-  -- Parser metadata (optional but valuable)
-  parsed_quantity text,                  -- "1"
-  parsed_unit text,                      -- "large"
-  
-  updated_at timestamptz not null default now(),
+  vocab_id        bigserial primary key,
+  ingredient_text text not null,                 -- exact string as found in corpus
+  ingredient_norm text not null,                 -- normalized (lower, trim, collapse ws)
+  count           bigint not null default 0,     -- frequency in corpus
+  source          text not null default 'food-com', -- corpus identifier
+  updated_at      timestamptz not null default now(),
   unique (source, ingredient_norm)
 );
 
-create index idx_vocab_count_desc on recipe_ingredient_vocab (count desc);
+create index idx_vocab_count on recipe_ingredient_vocab (count desc);
 create index idx_vocab_norm_trgm on recipe_ingredient_vocab using gin (ingredient_norm gin_trgm_ops);
 ```
 
@@ -739,54 +746,68 @@ create index idx_vocab_norm_trgm on recipe_ingredient_vocab using gin (ingredien
 
 ```sql
 create table canonical_ingredient (
-  canonical_id uuid primary key default uuid_generate_v4(),
-  canonical_name text not null,          -- "ground beef"
-  canonical_slug text not null unique,   -- "ground-beef"
-  frequency_rank bigint,                 -- 1 = most common
-  total_usage_count bigint not null default 0,
-  created_at timestamptz not null default now(),
-  version text not null default '1.0.0'
+  canonical_id     uuid primary key default gen_random_uuid(),
+  canonical_name   text not null,                -- "ground beef"
+  canonical_slug   text not null unique,         -- "ground-beef"
+  canonical_rank   bigint not null,              -- frequency-based priority (1 = most common)
+  total_count      bigint not null,              -- aggregate count across all aliases
+  synthetic_fdc_id bigint unique default nextval('recipe_ingredient_synthetic_seq'),
+  version          text not null default '1.0.0',
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
 );
+
+create index idx_canonical_name_trgm
+  on canonical_ingredient using gin (canonical_name gin_trgm_ops);
+create index idx_canonical_rank
+  on canonical_ingredient (canonical_rank);
 ```
 
 **Canonical aliases (critical for bias control)**
 
 ```sql
 create table canonical_ingredient_alias (
-  canonical_id uuid references canonical_ingredient(canonical_id) on delete cascade,
-  alias_norm text not null,
-  alias_count bigint not null default 0,
-  alias_source text not null default 'auto-generated', -- 'auto-generated', 'manual-override'
-  confidence_score float default 1.0,    -- 1.0 = exact, <1.0 = fuzzy/inferred
+  canonical_id   uuid not null references canonical_ingredient(canonical_id) on delete cascade,
+  alias_norm     text not null,                  -- normalized alias string
+  alias_count    bigint not null default 0,      -- frequency of this specific alias
+  alias_source   text not null default 'corpus', -- 'corpus', 'manual', 'uk-corpus', etc.
   primary key (canonical_id, alias_norm)
 );
 
-create index idx_alias_trgm on canonical_ingredient_alias using gin (alias_norm gin_trgm_ops);
+create index idx_alias_norm_trgm
+  on canonical_ingredient_alias using gin (alias_norm gin_trgm_ops);
 ```
 
 **FDC membership**
 
 ```sql
 create table canonical_fdc_membership (
-  canonical_id uuid references canonical_ingredient(canonical_id) on delete cascade,
-  fdc_id bigint references foods(fdc_id) on delete cascade,
-  membership_reason text not null,       -- 'exact-match', 'token-match', 'manual'
-  weight double precision not null default 1.0,
+  canonical_id       uuid not null references canonical_ingredient(canonical_id) on delete cascade,
+  fdc_id             bigint not null references foods(fdc_id) on delete cascade,
+  membership_reason  text not null,              -- 'canonical_bridge', 'base_bridge', 'substring', etc.
+  weight             double precision not null default 1.0,
+  created_at         timestamptz not null default now(),
   primary key (canonical_id, fdc_id)
 );
 ```
 
-**Synthetic nutrient boundaries**
+**Canonical nutrient boundaries** (migration 011)
 
 ```sql
-create table synthetic_ingredient_nutrients (
-  canonical_id uuid references canonical_ingredient(canonical_id) on delete cascade,
-  nutrient_id bigint not null,
-  amount_median double precision,
-  amount_p10 double precision,
-  amount_p90 double precision,
-  sample_size int,
-  updated_at timestamptz default now(),
+create table canonical_ingredient_nutrients (
+  canonical_id   uuid not null references canonical_ingredient(canonical_id) on delete cascade,
+  nutrient_id    bigint not null references nutrients(nutrient_id),
+  unit_name      text not null,
+  median         double precision not null,
+  p10            double precision,          -- null if n_samples < 3
+  p90            double precision,
+  p25            double precision,
+  p75            double precision,
+  min_amount     double precision,
+  max_amount     double precision,
+  n_samples      int not null,             -- foods with this nutrient present
+  n_total        int not null,             -- total member foods
+  computed_at    timestamptz not null default now(),
   primary key (canonical_id, nutrient_id)
 );
 ```
@@ -918,23 +939,17 @@ LIMIT 50;
 
 If no matches found, leave membership empty (flagged for review).
 
-### 11.7 Synthetic Nutrient Boundaries
+### 11.7 Canonical Nutrient Boundaries
 
-For each `canonical_id` with members:
+For each `canonical_id` with members, run `scripts/aggregate-recipe-nutrients.ts`:
 
-```sql
-insert into synthetic_ingredient_nutrients
-select
-  canonical_id,
-  nutrient_id,
-  percentile_cont(0.5) within group (order by amount) as median,
-  percentile_cont(0.1) within group (order by amount) as p10,
-  percentile_cont(0.9) within group (order by amount) as p90,
-  count(*) as n_samples
-from canonical_fdc_membership m
-join food_nutrients fn on m.fdc_id = fn.fdc_id
-group by canonical_id, nutrient_id;
+```bash
+npx tsx scripts/aggregate-recipe-nutrients.ts          # incremental (skip already computed)
+npx tsx scripts/aggregate-recipe-nutrients.ts --force   # recompute all
+npx tsx scripts/aggregate-recipe-nutrients.ts --slug ground-beef  # single ingredient
 ```
+
+The script fetches nutrient amounts from `food_nutrients` via `canonical_fdc_membership`, computes percentile statistics in JS (to avoid `percentile_cont` issues with connection poolers), and writes to `canonical_ingredient_nutrients` via batched UPSERT.
 
 ### 11.8 Versioning Requirements
 
@@ -948,16 +963,19 @@ group by canonical_id, nutrient_id;
 
 ---
 
-## 12. Immediate Implementation Steps
+## 12. Implementation Status
 
-1. **Create `recipe_ingredient_vocab`** — load whatever corpus exists (even 2K generated recipes)
-2. **Generate top 1,000 canonical candidates** — frequency-sorted
-3. **Build FDC canonical base names** — if not already done via `food_canonical_names`
-4. **Map top 200 canonicals to FDC membership** — exact + token matching
-5. **Generate synthetic nutrient boundaries** — median, p10, p90
-6. **Expose API**:
-   - `GET /api/canonical-ingredients` — list with frequency
-   - `GET /api/canonical-ingredients/:slug` — detail with nutrients and sources
+All steps are complete:
+
+1. **`recipe_ingredient_vocab`** — loaded from Food.com corpus (231K recipes, 14,915 unique ingredients)
+2. **`canonical_ingredient`** — top ingredients registered with frequency-based ranking
+3. **`canonical_ingredient_alias`** — alias bridging for regional variants and synonyms
+4. **`canonical_fdc_membership`** — FDC foods mapped via canonical/base bridge + substring matching
+5. **`canonical_ingredient_nutrients`** — median, p10/p90, p25/p75, min/max boundaries computed per canonical
+6. **API endpoints**:
+   - `GET /api/ingredients` — paginated list with search and nutrient filter
+   - `GET /api/ingredients/:slug` — detail with full nutrient boundaries
+   - `POST /api/ingredients/resolve` — batch resolve free-text names (direct → alias → fuzzy) with `method` + `confidence` transparency
 
 ---
 
