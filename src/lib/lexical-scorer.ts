@@ -934,22 +934,22 @@ export const SYNONYM_TABLE = new Map<string, string[][]>([
  * Score a single (ingredient, candidate) pair.
  *
  * Signal weights (sum to 1.0):
- *   overlap:  0.35
- *   jw:       0.25
- *   segment:  0.20
+ *   overlap:  0.50
+ *   jw:       0.00 (disabled — kept for recalibration from production distributions)
+ *   segment:  0.25
  *   affinity: 0.10
- *   synonym:  0.10
+ *   synonym:  0.15
  */
 export function scoreCandidate(
   ingredient: ProcessedIngredient,
   candidate: ProcessedFdcFood,
   idf: IdfWeights,
 ): ScoredMatch {
-  const W_O = 0.35;
-  const W_JW = 0.25;
-  const W_SEG = 0.20;
+  const W_O = 0.50;
+  const W_JW = 0.00; // disabled — kept for recalibration from production distributions
+  const W_SEG = 0.25;
   const W_AFF = 0.10;
-  const W_SYN = 0.10;
+  const W_SYN = 0.15;
 
   // --- Signal 1: Directional token overlap (IDF-weighted) ---
   let matchedWeight = 0;
@@ -970,7 +970,7 @@ export function scoreCandidate(
     ? matchedWeight / ingredient.matchableWeight
     : 0;
 
-  // --- Signal 2: Jaro-Winkler (gated by token evidence) ---
+  // --- Signal 2: Jaro-Winkler (weight=0, kept for recalibration) ---
   const jwScores: number[] = [];
   if (candidate.invertedName) {
     jwScores.push(jaroWinkler(ingredient.normalized, candidate.invertedName));
@@ -985,8 +985,6 @@ export function scoreCandidate(
     jwScores.push(jaroWinkler(ingredient.normalized, paren));
   }
   const jwRaw = jwScores.length > 0 ? Math.max(...jwScores) : 0;
-
-  // Gate: if token overlap < 0.40, cap JW at 0.20
   const jwGated = overlap < 0.40 ? Math.min(jwRaw, 0.20) : jwRaw;
 
   // --- Signal 3: Segment match ---
@@ -1108,8 +1106,6 @@ export function scoreCandidate(
     reason = "lexical:synonym_confirmed";
   } else if (overlap >= 0.90) {
     reason = "lexical:token_overlap_high";
-  } else if (jwGated >= 0.90) {
-    reason = "lexical:jw_high";
   } else {
     reason = `lexical:${signals[0].name}`;
   }

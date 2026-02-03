@@ -93,8 +93,8 @@ interface ScorerConfig {
 
 const CONFIG: ScorerConfig = {
   version: "lexical_v2",
-  weights: { overlap: 0.35, jw: 0.25, segment: 0.20, affinity: 0.10, synonym: 0.10 },
-  thresholds: { mapped: 0.80, review: 0.40, nearTie: 0.05 },
+  weights: { overlap: 0.50, jw: 0.00, segment: 0.25, affinity: 0.10, synonym: 0.15 },
+  thresholds: { mapped: 0.75, review: 0.40, nearTie: 0.05 },
   jwGate: { overlapThreshold: 0.40, capValue: 0.20 },
 };
 
@@ -368,10 +368,10 @@ const TRIPWIRE_CASES: TripwireCase[] = [
   { ingredient: "butter", mustMatchCategory: "Dairy and Egg Products" },
 
   // Olive oil must map to oil, not olives
-  { ingredient: "olive oil", mustMatchDescriptionContains: "oil", minScore: 0.80 },
+  { ingredient: "olive oil", mustMatchDescriptionContains: "oil", minScore: 0.75 },
 
   // Olive (fruit) must map to olives, not oil
-  { ingredient: "olive", mustMatchCategory: "Vegetables and Vegetable Products" },
+  { ingredient: "olive", mustMatchCategory: "Fruits and Fruit Juices" },
 
   // Sugar must map to Sweets, not cookies
   { ingredient: "sugar", mustMatchCategory: "Sweets" },
@@ -601,7 +601,7 @@ async function main() {
         console.log(`    Reason: ${r.best.reason}`);
         console.log(`    Breakdown:`);
         console.log(`      overlap:  ${r.best.breakdown.overlap.toFixed(4)}`);
-        console.log(`      jwGated:  ${r.best.breakdown.jwGated.toFixed(4)}`);
+        console.log(`      jwGated:  ${r.best.breakdown.jwGated.toFixed(4)} (weight=0)`);
         console.log(`      segment:  ${r.best.breakdown.segment.toFixed(4)}`);
         console.log(`      affinity: ${r.best.breakdown.affinity.toFixed(4)}`);
         console.log(`      synonym:  ${r.best.breakdown.synonym.toFixed(4)}`);
@@ -707,38 +707,32 @@ async function main() {
     // Write to canonical_fdc_membership_staging (run-scoped winners)
     console.log("  Writing winner mappings...");
 
-    // P2 fix: Removed silent catch, now logs errors properly
-    // Using simple row-by-row insert for reliability over batch complexity
+    // Batch insert 500 rows at a time to avoid connection timeouts
+    const BATCH_SIZE = 500;
     let insertErrors = 0;
-    for (const row of winnerRows) {
+    for (let i = 0; i < winnerRows.length; i += BATCH_SIZE) {
+      const batch = winnerRows.slice(i, i + BATCH_SIZE);
+      const values: unknown[] = [];
+      const placeholders: string[] = [];
+      for (let j = 0; j < batch.length; j++) {
+        const row = batch[j];
+        const offset = j * 10;
+        placeholders.push(`($${offset+1}, $${offset+2}, $${offset+3}, $${offset+4}, $${offset+5}, $${offset+6}, $${offset+7}::text[], $${offset+8}, $${offset+9}, $${offset+10})`);
+        values.push(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]);
+      }
       try {
         await client.query(
           `INSERT INTO canonical_fdc_membership_staging
             (run_id, ingredient_key, ingredient_text, fdc_id, score, status, reason_codes, candidate_description, candidate_category, review_flag)
-           VALUES ($1, $2, $3, $4, $5, $6, $7::text[], $8, $9, $10)
+           VALUES ${placeholders.join(", ")}
            ON CONFLICT (run_id, ingredient_key) DO NOTHING`,
-          [
-            row[0], // run_id
-            row[1], // ingredient_key
-            row[2], // ingredient_text
-            row[3], // fdc_id
-            row[4], // score
-            row[5], // status
-            row[6], // reason_codes (string[])
-            row[7], // candidate_description
-            row[8], // candidate_category
-            row[9], // review_flag
-          ],
+          values,
         );
       } catch (err) {
-        insertErrors++;
-        if (insertErrors <= 5) {
-          console.error(`  Error inserting ${row[1]}: ${err instanceof Error ? err.message : err}`);
-        }
+        insertErrors += batch.length;
+        console.error(`  Error inserting batch ${Math.floor(i/BATCH_SIZE)+1}: ${err instanceof Error ? err.message : err}`);
       }
-    }
-    if (insertErrors > 5) {
-      console.error(`  ... and ${insertErrors - 5} more insert errors`);
+      console.log(`  ${Math.min(i + BATCH_SIZE, winnerRows.length)}/${winnerRows.length} rows written`);
     }
     console.log(`  ${winnerRows.length - insertErrors} winner mappings written${insertErrors > 0 ? ` (${insertErrors} errors)` : ""}`);
 
