@@ -20,16 +20,16 @@ export const UI_STRINGS = {
     },
     cards: [
       {
+        title: "Synthetic Ingredients",
+        description:
+          "Recipe-first ingredients with statistical nutrient profiles. Every number traces to real FDC foods, with aliases, member foods, and full provenance you can audit.",
+        href: "/ingredients",
+      },
+      {
         title: "Food Search",
         description:
           "8,000+ foods with filters that actually work. State, preservation, processing, cookability. We counted everything twice because trust issues.",
         href: "/foods",
-      },
-      {
-        title: "Ingredients",
-        description:
-          "Canonical ingredients derived from what recipe authors actually write. 'Ground beef' maps to FDC because 5,820 humans said so, not because GPT thought it sounded right.",
-        href: "/ingredients",
       },
       {
         title: "Categories",
