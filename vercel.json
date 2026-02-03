@@ -8,6 +8,15 @@
           "value": "public, max-age=0, must-revalidate"
         }
       ]
+    },
+    {
+      "source": "/((?!api|_next/static|_next/image|favicon.svg|apple-touch-icon.svg).*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-cache, no-store, max-age=0, must-revalidate"
+        }
+      ]
     }
   ]
 }
