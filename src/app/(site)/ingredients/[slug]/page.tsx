@@ -172,9 +172,19 @@ export default async function IngredientDetailPage({ params }: Props) {
 
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-text-primary">
-          {ingredient.ingredientName}
-        </h1>
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-2xl font-bold text-text-primary">
+            {ingredient.ingredientName}
+          </h1>
+          <a
+            href={`/api/ingredients/${ingredient.ingredientSlug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-sm border border-border-default text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
+          >
+            JSON
+          </a>
+        </div>
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-text-secondary">
           <span>
             Slug:{" "}
