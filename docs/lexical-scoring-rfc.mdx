@@ -17,33 +17,7 @@ No machine learning. No human-in-the-loop. Fully deterministic and auditable.
 
 ---
 
-## 1. The Problem
-
-### 1.1 Contaminated Nutrient Profiles
-
-The previous mapping system used an 8-strategy cascade that fell back to raw `.includes()` substring matching when earlier strategies failed. This produced contaminated FDC memberships:
-
-- **"oil"** (frequency: 9,841) mapped to 204 FDC foods, including every food containing the substring "oil" in descriptions like "b**oil**ed", "br**oil**ed", "par**oil**ed". The resulting nutrient profile showed ~4g fat instead of ~100g fat.
-- **"butter"** mapped to "Cookies, butter, commercially prepared" via base-name bridge matching. The nutrient profile blended cookie macros with dairy fat.
-- **"sugar"** mapped to "Cookies, sugar, refrigerated dough" via the same mechanism.
-
-These are not data quality issues. In a medical nutrition API, a 25x error in fat content for the most common cooking oil is a **safety incident**.
-
-### 1.2 Root Cause: Substring Matching Has No Word Boundaries
-
-The 3-character string `oil` appears inside `boiled`, `broiled`, `foiled`, `coiled`, `toiled`, and `soiled`. A `.includes("oil")` check cannot distinguish the ingredient "oil" from the cooking method "boiled." This is a fundamental architectural flaw, not a tuning problem.
-
-### 1.3 Design Requirements
-
-1. **Deterministic**: same inputs + same config = same outputs. No stochastic components.
-2. **Auditable**: every match produces a score breakdown with reason codes. An engineer can answer "why did ingredient X map to food Y?" with citations, not probabilities.
-3. **Boundary-safe**: word boundaries enforced at the tokenizer level, not via inner-loop regex.
-4. **Category-aware**: "butter" should prefer Dairy over Baked Products, and this preference must be explicit and versioned.
-5. **Safe publishing**: stage, validate, promote. No blind truncation of production data.
-
----
-
-## 2. Architecture
+## 1. Architecture
 
 The system scores every recipe ingredient against every FDC food description. With ~2,000 ingredients and ~8,158 FDC foods, this is ~16 million scoring operations --- trivially parallelizable and completable in under 10 seconds.
 
@@ -63,7 +37,7 @@ Recipe Ingredient ("olive oil", freq=32,763)
   Top match + near ties --> persisted with full breakdown
 ```
 
-### 2.1 The Tokenizer Invariant
+### 1.1 The Tokenizer Invariant
 
 Word boundary safety comes from the tokenizer, not from regex against raw strings. Both ingredient and FDC descriptions are tokenized by the same function $\tau$:
 
@@ -75,7 +49,7 @@ Token overlap is computed via **set membership on pre-tokenized sets**. The toke
 
 This is the system's most important invariant. Every other signal operates on tokenized data. There is no path through the scoring pipeline where raw substring matching can introduce a false positive.
 
-### 2.2 Two-Channel Tokens
+### 1.2 Two-Channel Tokens
 
 Tokens are classified into two channels by a deterministic classifier $\sigma$:
 
@@ -86,7 +60,7 @@ State tokens are **retained as a separate channel**, not deleted. Core tokens dr
 
 ---
 
-## 3. Scoring Algorithm
+## 2. Scoring Algorithm
 
 For each ingredient $I$ and candidate food $C$, five signals are computed and combined into a composite score.
 
@@ -98,7 +72,7 @@ For each ingredient $I$ and candidate food $C$, five signals are computed and co
 | Category affinity | 0.10 | Whether FDC category matches a versioned expectation lexicon |
 | Synonym confirmation | 0.10 | Whether known synonym tokens all appear in candidate |
 
-### 3.1 IDF-Weighted Token Overlap
+### 2.1 IDF-Weighted Token Overlap
 
 Token weights use inverse document frequency to ensure that rare, discriminative tokens (like `olive`) contribute more than common tokens (like `added`):
 
@@ -116,7 +90,7 @@ $$\text{Overlap}(I, C) = \frac{\sum_{t \in T_I \cap T_C} w(t)}{W_I}$$
 
 Range: $[0, 1]$. The direction is intentional: we measure what fraction of the *ingredient's* tokens are found in the candidate, not the reverse. A candidate with many extra tokens (like "Oil, olive, salad or cooking") is not penalized for having tokens the ingredient doesn't mention.
 
-### 3.2 Jaro-Winkler Similarity (Gated)
+### 2.2 Jaro-Winkler Similarity (Gated)
 
 Jaro-Winkler character-level similarity is computed against multiple candidate representations, taking the maximum:
 
@@ -130,7 +104,7 @@ $$JW_{\text{gated}} = \begin{cases} JW_{\max} & \text{if } \text{Overlap}(I,C) \
 
 Without this gate, Jaro-Winkler would assign high scores to strings that happen to share many characters but represent completely different foods. The gate ensures that JW only amplifies matches that already have meaningful token evidence.
 
-### 3.3 Segment Match
+### 2.3 Segment Match
 
 USDA FDC descriptions use a comma-separated structure where the first segment is typically the primary identity. For example, in "Butter, salted", the primary segment is "Butter"; in "Cookies, butter, commercially prepared", the primary segment is "Cookies."
 
@@ -144,7 +118,7 @@ $$\text{Seg}(I,C) = \begin{cases} 1.0 & \text{if } o_0 \geq 0.60 \\ 0.6 & \text{
 
 This ensures "Butter, salted" (primary = "butter") beats "Cookies, butter" (primary = "cookies") when the ingredient is "butter."
 
-### 3.4 Category Affinity
+### 2.4 Category Affinity
 
 A small, explicit, versioned lexicon maps ingredient tokens to expected FDC categories:
 
@@ -163,7 +137,7 @@ $$\text{Aff}(I,C) = \begin{cases} 1.0 & \text{if any token's expected categories
 
 When no expectation exists for any token, the score is 0 --- neutral, not a penalty. The lexicon is versioned and deterministic; it does not learn or drift.
 
-### 3.5 Synonym Confirmation (Gated)
+### 2.5 Synonym Confirmation (Gated)
 
 A synonym table maps recipe ingredient names to sets of FDC description tokens that confirm a match:
 
@@ -182,13 +156,13 @@ $$\text{Syn}(I,C) = \begin{cases} \max_i \text{sat}(\Sigma_i, C) & \text{if } \t
 
 The overlap gate prevents synonym confirmation from independently establishing a match --- it can only strengthen an existing one.
 
-### 3.6 Composite Score
+### 2.6 Composite Score
 
 $$\text{Score}(I,C) = 0.35 \cdot \text{Overlap} + 0.25 \cdot JW_{\text{gated}} + 0.20 \cdot \text{Seg} + 0.10 \cdot \text{Aff} + 0.10 \cdot \text{Syn}$$
 
 Range: $[0, 1]$.
 
-### 3.7 Confidence Thresholds
+### 2.7 Confidence Thresholds
 
 | Score | Status | Action |
 |-------|--------|--------|
@@ -198,7 +172,7 @@ Range: $[0, 1]$.
 
 ---
 
-## 4. Worked Example
+## 3. Worked Example
 
 ### "olive oil" vs. "Oil, olive, salad or cooking"
 
@@ -230,7 +204,7 @@ The system correctly identifies "Oil, olive, salad or cooking" as the intended m
 
 ---
 
-## 5. USDA Inverted Naming
+## 4. USDA Inverted Naming
 
 FDC uses an inverted naming convention: "Oil, olive" instead of "olive oil." The system resolves this at load time using domain knowledge sets exported from the canonicalization layer:
 
@@ -243,7 +217,7 @@ The inverted name is one scoring input for Jaro-Winkler. It does not replace tok
 
 ---
 
-## 6. Tripwire Tests
+## 5. Tripwire Tests
 
 The following invariants are enforced as regression tests. Any violation blocks promotion of a scoring run.
 
@@ -268,7 +242,7 @@ The following invariants are enforced as regression tests. Any violation blocks 
 
 ---
 
-## 7. Run-Based Staging
+## 6. Run-Based Staging
 
 Scoring results are not written directly to production tables. Instead, each scoring run produces a versioned artifact:
 
@@ -282,7 +256,7 @@ This replaces the previous approach of truncating production tables before rebui
 
 ---
 
-## 8. Performance
+## 7. Performance
 
 | Metric | Value |
 |--------|-------|
@@ -298,7 +272,7 @@ The scorer is pure functions with no I/O in the hot path. All FDC food data is p
 
 ---
 
-## 9. What This Architecture Does Not Do
+## 8. What This Architecture Does Not Do
 
 - **No AI inference.** Scoring is deterministic arithmetic on pre-tokenized sets.
 - **No embedding similarity.** There are no vectors, no cosine similarity, no semantic search.
