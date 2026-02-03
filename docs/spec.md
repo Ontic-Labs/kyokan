@@ -25,7 +25,7 @@
 | Table | Rows |
 |-------|------|
 | foods | 8,158 (7,793 SR Legacy + 365 Foundation) |
-| nutrients | 228 |
+| nutrients | 247 |
 | food_nutrients | 659,489 |
 | food_categories | 25+ |
 | food_portions | 14,836 |

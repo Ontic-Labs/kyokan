@@ -279,11 +279,11 @@ for (const recipe of recipes) {
 
 | Ingredient | Frequency | Coverage |
 |------------|-----------|----------|
-| salt | 85,127 | 36.8% of recipes |
-| butter | 41,623 | 18.0% |
-| sugar | 39,108 | 16.9% |
-| eggs | 34,729 | 15.0% |
-| olive oil | 28,442 | 12.3% |
+| salt | 85,266 | 36.8% of recipes |
+| butter | 54,566 | 23.6% |
+| sugar | 44,325 | 19.1% |
+| eggs | 33,389 | 14.4% |
+| olive oil | 32,763 | 14.1% |
 | ground beef | 5,820 | 2.5% |
 
 ### 5.4 The Canonical IS the Recipe Name
@@ -331,21 +331,20 @@ The recipe ingredient string **is** the canonical name. No derivation, no infere
 Frequency provides natural prioritization and edge case detection:
 
 ```
-salt           85,127  ← Universal, definitely canonical
+salt           85,266  ← Universal, definitely canonical
 ground beef     5,820  ← Common, canonical
-truffle oil       127  ← Niche but real
-ghost pepper       23  ← Rare specialty
-beef fat            3  ← Edge case, manual review
+truffle oil        35  ← Niche but real
+groud beef          2  ← Typo, discarded by frequency floor
 ```
 
 ### Coverage Analysis
 
 | Top N Ingredients | % of Recipe Ingredient Usage |
 |-------------------|------------------------------|
-| 100 | ~60% |
-| 500 | ~85% |
-| 1,000 | ~92% |
-| 5,000 | ~99% |
+| 100 | ~52% |
+| 500 | ~77% |
+| 1,000 | ~86% |
+| 5,000 | ~98% |
 
 Focusing on the top 500 ingredients solves most of the problem.
 
@@ -550,9 +549,10 @@ SELECT
     WHEN f.description ILIKE '%' || s.term || '%' THEN 'exact-match'
     ELSE 'fuzzy-match'
   END as match_type
-FROM foods f, search_terms s
-WHERE 
-  f.is_cookable = true 
+FROM foods f
+JOIN fdc_cookability_assessment fca ON fca.fdc_id = f.fdc_id, search_terms s
+WHERE
+  fca.is_cookable = true
   AND (
     f.description ILIKE '%' || s.term || '%'
     OR similarity(f.description, s.term) > 0.4

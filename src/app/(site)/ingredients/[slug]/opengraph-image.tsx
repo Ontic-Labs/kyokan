@@ -1,7 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getIngredientBySlug } from "@/lib/data/ingredients";
 
-export const runtime = "edge";
 export const alt = "Kyokon Ingredient";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

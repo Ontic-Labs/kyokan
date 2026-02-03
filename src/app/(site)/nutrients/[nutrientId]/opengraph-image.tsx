@@ -1,7 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getNutrientById, getTopFoodsForNutrient } from "@/lib/data/nutrients";
 
-export const runtime = "edge";
 export const alt = "Kyokon Nutrient";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

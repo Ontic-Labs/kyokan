@@ -64,13 +64,13 @@ The "Semantic Trap" is the belief that an LLM can bridge this gap by *understand
 
 ### The Zipfian Truth
 
-In any large corpus of user behavior, vocabulary follows a Zipfian distribution. The "head" (top 1,000 terms) represents ~90% of reality. The "tail" represents edge cases, typos, and errors.
+In any large corpus of user behavior, vocabulary follows a Zipfian distribution. The "head" (top 1,000 terms) represents ~86% of usage. The "tail" represents edge cases, typos, and errors.
 
 | Zone | Terms | % of Usage | Strategy |
 |------|-------|------------|----------|
-| **Head** | Top 500 | ~85% | Auto-canonicalize |
-| **Torso** | 500–5,000 | ~12% | Review + fuzzy match |
-| **Tail** | 5,000+ | ~3% | Flag for manual review or discard |
+| **Head** | Top 500 | ~77% | Auto-canonicalize |
+| **Torso** | 500–5,000 | ~21% | Review + fuzzy match |
+| **Tail** | 5,000+ | ~2% | Flag for manual review or discard |
 
 **Pattern:** Do not use an LLM to guess the ontology. Use the "head" of the distribution to **reveal** the ontology.
 
@@ -97,9 +97,9 @@ WHERE count >= 25;  -- The Frequency Floor
 
 | Term | Count | Treatment |
 |------|-------|-----------|
-| `salt` | 85,127 | Canonical |
+| `salt` | 85,266 | Canonical |
 | `ground beef` | 5,820 | Canonical |
-| `truffle oil` | 127 | Canonical (niche but real) |
+| `truffle oil` | 35 | Canonical (niche but real) |
 | `groud beef` | 2 | Discarded (typo) |
 | `unicorn tears` | 1 | Discarded (noise) |
 

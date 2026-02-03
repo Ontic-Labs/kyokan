@@ -187,13 +187,16 @@ For each recipe ingredient (e.g., "ground beef"):
 
 ```sql
 -- 1. Exact phrase match (highest confidence)
-SELECT fdc_id FROM foods 
-WHERE lower(description) LIKE '%ground beef%' 
-  AND is_cookable = true;
+SELECT f.fdc_id FROM foods f
+JOIN fdc_cookability_assessment fca ON fca.fdc_id = f.fdc_id
+WHERE lower(f.description) LIKE '%ground beef%'
+  AND fca.is_cookable = true;
 
 -- 2. Fuzzy match (medium confidence, requires pg_trgm)
-SELECT fdc_id, similarity(description, 'ground beef') as sim
-FROM foods WHERE is_cookable = true
+SELECT f.fdc_id, similarity(f.description, 'ground beef') as sim
+FROM foods f
+JOIN fdc_cookability_assessment fca ON fca.fdc_id = f.fdc_id
+WHERE fca.is_cookable = true
 ORDER BY sim DESC LIMIT 10;
 
 -- 3. Component match (lower confidence)

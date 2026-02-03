@@ -9,7 +9,7 @@
 Most "AI Nutrition" projects try to solve an **ontology problem** with **inference tools**. They embed USDA descriptions, cluster via LLM, and hope the model understands food chemistry. This approach fails in predictable ways:
 
 - **Non-deterministic:** Same input produces different outputs across runs
-- **Hallucination-prone:** "Groundnut" might map to "tree nut" (a potentially fatal error for peanut allergies)
+- **Hallucination-prone:** "Groundnut" might map to "tree nut" — a potentially fatal error for peanut allergies
 - **Opaque:** When something goes wrong, you cannot explain *why*
 - **Drift-sensitive:** Model updates change outputs without code changes
 
@@ -26,7 +26,7 @@ In high-stakes domains (nutrition, medicine, law), "probability" is a euphemism 
 | Data Source | What It Tells You | Role |
 |-------------|-------------------|------|
 | **USDA FDC** | What a molecule is | Chemistry database |
-| **Recipe Corpus** | What a human *thinks* food is | Cultural database |
+| **Recipe Corpus** | What humans *call* food | Cultural database |
 | **Kyokon** | The bridge between them | Ontology layer |
 
 Instead of asking an LLM "what should we call this food?", we count what 231,637 recipe authors actually wrote.
@@ -34,22 +34,22 @@ Instead of asking an LLM "what should we call this food?", we count what 231,637
 ### Frequency as Ground Truth
 
 ```
-salt           85,127 occurrences  ← Universal, definitely canonical
-ground beef     5,820 occurrences  ← Common, canonical  
-truffle oil       127 occurrences  ← Niche but real
+salt           85,266 occurrences  ← Universal, definitely canonical
+ground beef     5,820 occurrences  ← Common, canonical
+truffle oil        35 occurrences  ← Niche but real
 groud beef          2 occurrences  ← Typo, discarded
 unicorn tears       1 occurrence   ← Noise, discarded
 ```
 
-The long tail of typos and garbage is automatically filtered by a **Frequency Floor**. Zipf's Law becomes your garbage collector.
+The long tail of typos and garbage is automatically filtered by a **Frequency Floor** (count ≥ 25). Zipf's Law becomes your garbage collector.
 
 ### Radical Auditability
 
-Every mapping in Kyokon can be traced to a source count:
+Every mapping in Kyokon traces to a source count:
 
 ```sql
-SELECT count(*) FROM recipe_ingredients 
-WHERE normalized_name = 'ground beef';
+SELECT count(*) FROM recipe_ingredient_vocab 
+WHERE ingredient_norm = 'ground beef';
 -- Result: 5,820
 ```
 
@@ -87,11 +87,11 @@ These names represent **consensus** — thousands of independent authors converg
 
 ### Coverage
 
-| Top N Ingredients | % of Recipe Ingredient Usage |
-|-------------------|------------------------------|
-| 100 | ~60% |
-| 500 | ~85% |
-| 1,000 | ~95% |
+| Top N Ingredients | % of Recipe Usage |
+|-------------------|-------------------|
+| 100 | ~52% |
+| 500 | ~77% |
+| 1,000 | ~86% |
 
 The head of the Zipfian distribution covers almost everything. The tail is noise.
 
@@ -109,7 +109,7 @@ LLMs optimize for semantic correctness:
 "peanut" ≈ "groundnut" ≈ ???
 ```
 
-These are all semantically equivalent! But for an allergy-aware system, mapping "groundnut" to the wrong category could be fatal.
+These are all semantically equivalent. But for an allergy-aware system, mapping "groundnut" to the wrong category could be fatal.
 
 **Semantic equivalence ≠ Pragmatic safety**
 
@@ -117,8 +117,8 @@ These are all semantically equivalent! But for an allergy-aware system, mapping 
 
 | System Type | Behavior on Uncertainty | Risk |
 |-------------|-------------------------|------|
-| **LLMs** | Eager to please; provides *an* answer | Silent failure (wrong answers presented confidently) |
-| **Kyokon** | Returns NULL if term not found | Explicit failure (visible, actionable) |
+| **LLMs** | Eager to please; provides *an* answer | Silent failure (confident wrong answers) |
+| **Kyokon** | Returns `NULL` if term not found | Explicit failure (visible, actionable) |
 
 We would rather return "unknown" than guess wrong.
 
@@ -144,16 +144,18 @@ Not all FDC foods belong in recipes. We use a deterministic veto system:
 
 **Result:** 7,291 cookable foods (89.4%) from 8,158 total FDC entries.
 
-### Database Schema
+### Core Tables
 
-```
-foods                    8,158 rows    Core food records
-nutrients                  228 rows    Nutrient definitions
-food_nutrients         659,489 rows    Nutrient values per food
-food_categories            25+ rows    USDA food groups
-food_portions          14,836 rows    Household measures
-synthetic_ingredients   7,311 rows    Recipe-derived canonicals
-```
+| Table | Rows | Description |
+|-------|------|-------------|
+| `foods` | 8,158 | Core FDC food records |
+| `nutrients` | 247 | Nutrient definitions |
+| `food_nutrients` | 659,489 | Nutrient values per food |
+| `food_categories` | 25 | USDA food groups |
+| `food_portions` | 14,836 | Household measures |
+| `recipe_ingredient_vocab` | 14,915 | Unique ingredient strings from corpus |
+| `canonical_ingredient` | ~2,334 | Canonicals with FDC mappings and nutrient boundaries |
+| `canonical_ingredient_nutrients` | — | Aggregated nutrient boundaries |
 
 ---
 
@@ -167,45 +169,87 @@ https://kyokon.ai/api
 
 ### Authentication
 
-All data endpoints require an API key:
+All endpoints require an API key:
 
 ```
-X-API-Key: your-key
-Authorization: Bearer your-key
+X-API-Key: kyo_your-key-here
+Authorization: Bearer kyo_your-key-here
 ```
 
-### Endpoints
+### Core Endpoints
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/foods` | Search foods with filters |
-| `GET /api/foods/{fdcId}` | Full food detail with nutrients |
-| `GET /api/ingredients` | Synthetic ingredients from recipes |
-| `GET /api/ingredients/{slug}` | Ingredient detail with FDC mappings |
-| `GET /api/canonicals` | Canonical ingredient vocabulary |
-| `GET /api/categories` | USDA food categories |
-| `GET /api/nutrients` | All tracked nutrients |
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/foods` | GET | Search foods with filters |
+| `/foods/{fdcId}` | GET | Full food detail with nutrients |
+| `/ingredients` | GET | Recipe-first canonical ingredients |
+| `/ingredients/{slug}` | GET | Ingredient detail with nutrient boundaries |
+| `/ingredients/resolve` | POST | Batch resolve free-text ingredient names |
+| `/categories` | GET | USDA food categories |
+| `/nutrients` | GET | All tracked nutrients |
+
+### The Resolve Endpoint
+
+The killer feature. Send free-text ingredient names, get back canonical matches with full nutrient boundaries:
+
+```bash
+POST /api/ingredients/resolve
+Content-Type: application/json
+
+{
+  "ingredients": ["ground beef", "kosher salt", "olive oil"]
+}
+```
+
+Response includes:
+- Canonical match (or `null` if unresolved)
+- Match method (`direct`, `alias`, `fuzzy`)
+- Confidence score
+- Full nutrient boundaries (median, p10, p90, p25, p75, min, max)
 
 ### Query Features
 
 - **Fuzzy search:** PostgreSQL trigram matching
 - **Nutrient filtering:** Find foods by nutrient content ranges
 - **Cookability filter:** Exclude non-cooking items
-- **State classification:** Filter by raw/cooked, preservation, processing
+- **State filters:** raw/cooked, preservation method, processing level
 
 ### Response Format
 
+All list endpoints return paginated responses:
+
 ```json
 {
-  "data": [...],
-  "pagination": {
-    "page": 1,
-    "limit": 25,
-    "total": 100,
-    "totalPages": 4
-  }
+  "items": [...],
+  "total": 100,
+  "page": 1,
+  "pageSize": 25
 }
 ```
+
+---
+
+## Nutrient Boundaries
+
+Unlike other nutrition APIs that return single-point estimates, Kyokon returns **statistical boundaries**:
+
+```json
+{
+  "nutrientId": 1008,
+  "name": "Energy",
+  "unit": "kcal",
+  "median": 254,
+  "p10": 176,
+  "p90": 332,
+  "p25": 213,
+  "p75": 287,
+  "min": 137,
+  "max": 332,
+  "nSamples": 12
+}
+```
+
+Because "ground beef has 250 calories" is a lie. Ground beef has a *range* of calories depending on fat content, and we report the actual distribution from FDC source foods.
 
 ---
 
@@ -216,10 +260,10 @@ Authorization: Bearer your-key
 | **Canonical source** | Model inference | Human consensus (counted) |
 | **Determinism** | Non-deterministic | 100% deterministic |
 | **Explainability** | "The model says..." | "5,820 recipes use this string" |
-| **Cost per query** | ~$0.001-0.01 | ~$0.00001 |
+| **Cost per query** | ~$0.001–0.01 | ~$0.00001 |
 | **Drift risk** | Model updates change output | Only changes with new recipe data |
 | **Hallucination** | Always possible | Structurally impossible |
-| **Auditability** | Prompt archaeology | SQL query |
+| **Debugging** | Prompt archaeology | SQL query |
 
 ---
 
@@ -228,7 +272,7 @@ Authorization: Bearer your-key
 - **Recipe nutrition calculators** — Map user ingredients to FDC data
 - **Dietary tracking apps** — Consistent ingredient vocabulary
 - **Allergy detection systems** — Deterministic, auditable mappings
-- **Meal planning platforms** — Reliable nutrient aggregation
+- **Meal planning platforms** — Reliable nutrient aggregation with uncertainty
 - **Food research tools** — Transparent methodology for citations
 - **Ingredient substitution engines** — Know what's semantically close
 
@@ -251,9 +295,10 @@ Kyokon is built on these principles.
 
 ## Documentation
 
-- **API Docs (Interactive):** https://kyokon.ai/docs
+- **Interactive API Docs:** https://kyokon.ai/docs
 - **OpenAPI Specification:** https://kyokon.ai/openapi.json
-- **Methodology Paper:** See "Empirical Ontology for High-Stakes Domains" in our blog
+- **Methodology:** [Empirical Ontology for High-Stakes Domains](empirical-ontology-pattern.md)
+- **Implementation:** [Recipe-First Architecture](recipe-first-architecture.md)
 
 ---
 
@@ -261,9 +306,9 @@ Kyokon is built on these principles.
 
 For API access, partnership inquiries, or methodology questions:
 
-**Website:** https://kyokon.ai
+**Website:** https://kyokon.ai  
 **Built by:** Ontic Labs
 
 ---
 
-*This document is designed to be read by both humans and AI systems. The methodology described here is intentionally transparent because we believe high-stakes systems require radical auditability.*
+*This document is designed to be read by both humans and AI systems. The methodology is intentionally transparent because high-stakes systems require radical auditability.*

@@ -757,7 +757,7 @@ Only set when an explicit processing keyword appears in the description. Default
 | 1093 | Sodium, Na | mg |
 | 1162 | Vitamin C | mg |
 
-Use `GET /api/nutrients` for the complete list of 228 nutrients.
+Use `GET /api/nutrients` for the complete list of 247 nutrients.
 
 ---
 
@@ -866,7 +866,7 @@ validateItems(schema, items) -> T[]
 
 ## Appendix A: Complete Nutrient Reference
 
-Use `GET /api/nutrients` to retrieve the complete list of 228 nutrients. Common nutrients are listed in [Common Nutrient IDs](#common-nutrient-ids).
+Use `GET /api/nutrients` to retrieve the complete list of 247 nutrients. Common nutrients are listed in [Common Nutrient IDs](#common-nutrient-ids).
 
 ## Appendix B: Category Reference
 
