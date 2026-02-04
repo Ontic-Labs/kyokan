@@ -67,6 +67,130 @@ interface RecipeIngredient {
   frequency: number;
 }
 
+interface OntologyFdc {
+  fdcId: number | null;
+  dataType: string | null;
+  description: string | null;
+}
+
+interface OntologyEntry {
+  slug: string;
+  displayName: string;
+  surfaceForms: string[];
+  fdc: OntologyFdc;
+  equivalenceClass: string;
+}
+
+// ---------------------------------------------------------------------------
+// Ontology loading (primary lookup path)
+// ---------------------------------------------------------------------------
+
+interface OntologyLoadResult {
+  map: Map<string, OntologyEntry>;
+  validFdcSlugs: Set<string>;  // entries whose fdcId is in cookable foods
+  totalEntries: number;
+  validEntries: number;
+  invalidEntries: number;
+}
+
+function loadOntology(
+  foodsByFdcId: Map<number, ProcessedFdcFood>,
+): OntologyLoadResult {
+  const path = "data/ingredient-ontology.json";
+  if (!fs.existsSync(path)) {
+    console.warn(`  Warning: ${path} not found. Ontology lookup disabled.`);
+    return { map: new Map(), validFdcSlugs: new Set(), totalEntries: 0, validEntries: 0, invalidEntries: 0 };
+  }
+  const raw: OntologyEntry[] = JSON.parse(fs.readFileSync(path, "utf-8"));
+
+  const map = new Map<string, OntologyEntry>();
+  const validFdcSlugs = new Set<string>();
+  let validEntries = 0;
+  let invalidEntries = 0;
+
+  // Index ALL entries by surface form, regardless of FDC validity.
+  // Track which have valid FDC IDs separately.
+  for (const entry of raw) {
+    const fdcId = entry.fdc?.fdcId;
+    const hasValidFdc = fdcId != null && foodsByFdcId.has(fdcId);
+
+    if (hasValidFdc) {
+      validEntries++;
+      validFdcSlugs.add(entry.slug);
+    } else {
+      invalidEntries++;
+    }
+
+    for (const form of entry.surfaceForms) {
+      // Add both raw lowercase and preNormalized forms as keys.
+      // preNormalize handles compound splits ("breadcrumbs" → "bread crumbs"),
+      // unit noise stripping ("garlic cloves" → "garlic"), and & → and.
+      const rawForm = form.toLowerCase().trim();
+      if (rawForm && !map.has(rawForm)) {
+        map.set(rawForm, entry);
+      }
+      const pre = preNormalize(form).toLowerCase().trim();
+      if (pre && pre !== rawForm && !map.has(pre)) {
+        map.set(pre, entry);
+      }
+    }
+  }
+
+  return { map, validFdcSlugs, totalEntries: raw.length, validEntries, invalidEntries };
+}
+
+type OntologyLookupResult =
+  | { kind: "direct"; result: ScoringResult }      // valid FDC → score 1.0, done
+  | { kind: "boost" }                               // known ingredient, invalid FDC → promote scorer result
+  | null;                                            // not in ontology
+
+function lookupOntology(
+  ingredientName: string,
+  ontologyMap: Map<string, OntologyEntry>,
+  validFdcSlugs: Set<string>,
+  foodsByFdcId: Map<number, ProcessedFdcFood>,
+  idf: IdfWeights,
+): OntologyLookupResult {
+  const normalized = preNormalize(ingredientName).toLowerCase().trim();
+  const entry = ontologyMap.get(normalized);
+  if (!entry) return null;
+
+  // Entry found in ontology — check if its FDC ID is valid
+  if (validFdcSlugs.has(entry.slug)) {
+    const fdcId = entry.fdc.fdcId!;
+    const food = foodsByFdcId.get(fdcId)!;
+    const processed = processIngredient(ingredientName, idf);
+
+    const match: ScoredMatch = {
+      fdcId: fdcId,
+      score: 1.0,
+      reason: "ontology:surface_form",
+      breakdown: {
+        overlap: 1.0,
+        jwGated: 1.0,
+        segment: 1.0,
+        affinity: 1.0,
+        synonym: 1.0,
+      },
+    };
+
+    return {
+      kind: "direct",
+      result: {
+        ingredient: processed,
+        ingredientText: ingredientName,
+        best: match,
+        bestFood: food,
+        nearTies: [{ food, match }],
+        status: "mapped",
+      },
+    };
+  }
+
+  // Known ingredient but FDC ID not in our cookable foods — boost scorer result
+  return { kind: "boost" };
+}
+
 // ---------------------------------------------------------------------------
 // Config + hashing (for run reproducibility)
 // ---------------------------------------------------------------------------
@@ -252,7 +376,16 @@ function scoreOnePart(
     allScores.push({ food, match });
   }
 
-  allScores.sort((a, b) => b.match.score - a.match.score);
+  allScores.sort((a, b) => {
+    // Primary: higher composite score
+    const scoreDiff = b.match.score - a.match.score;
+    if (Math.abs(scoreDiff) > 1e-6) return scoreDiff;
+    // Tiebreaker 1: higher segment score (primary segment match preferred)
+    const segDiff = b.match.breakdown.segment - a.match.breakdown.segment;
+    if (Math.abs(segDiff) > 1e-6) return segDiff;
+    // Tiebreaker 2: shorter description (simpler = more likely base food)
+    return a.food.description.length - b.food.description.length;
+  });
   return { processed, allScores };
 }
 
@@ -554,13 +687,44 @@ async function main() {
       df: dfEntries,
     });
 
-    // --- Score all ingredients ---
-    console.log("\nScoring ingredients against all FDC candidates...");
+    // --- Load ontology for primary lookup ---
+    console.log("Loading ingredient ontology...");
+    const foodsByFdcId = new Map<number, ProcessedFdcFood>();
+    for (const food of foods) {
+      // pg returns BIGINT as string; coerce to number for consistent Map keys
+      foodsByFdcId.set(Number(food.fdcId), food);
+    }
+    const ontology = loadOntology(foodsByFdcId);
+    console.log(`  ${ontology.validEntries} entries with valid FDC IDs, ${ontology.invalidEntries} skipped`);
+    console.log(`  ${ontology.map.size} surface forms indexed`);
+
+    // --- Score all ingredients (ontology first, then lexical scorer fallback) ---
+    console.log("\nScoring ingredients (ontology lookup → lexical fallback)...");
     const results: ScoringResult[] = [];
+    let ontologyHits = 0;
     const startTime = Date.now();
 
+    let ontologyBoosted = 0;
     for (let i = 0; i < ingredients.length; i++) {
-      const result = scoreIngredient(ingredients[i], foods, idf);
+      const lookup = lookupOntology(ingredients[i].name, ontology.map, ontology.validFdcSlugs, foodsByFdcId, idf);
+      let result: ScoringResult;
+
+      if (lookup?.kind === "direct") {
+        // Ontology has valid FDC match — use directly
+        result = lookup.result;
+        ontologyHits++;
+      } else {
+        // Run lexical scorer (either no ontology match or invalid FDC)
+        result = scoreIngredient(ingredients[i], foods, idf);
+
+        if (lookup?.kind === "boost" && result.best && result.status === "needs_review") {
+          // Ontology confirms this is a real ingredient — promote to mapped
+          // if the scorer found a reasonable candidate (score >= review threshold)
+          result.status = "mapped";
+          result.best = { ...result.best, reason: `ontology:boosted(${result.best.reason})` };
+          ontologyBoosted++;
+        }
+      }
       results.push(result);
 
       if ((i + 1) % 50 === 0 || i === ingredients.length - 1) {
@@ -569,7 +733,7 @@ async function main() {
         const review = results.filter((r) => r.status === "needs_review").length;
         const noMatch = results.filter((r) => r.status === "no_match").length;
         process.stdout.write(
-          `\r  ${i + 1}/${ingredients.length} scored (${elapsed}s) — mapped: ${mapped}, review: ${review}, no_match: ${noMatch}`,
+          `\r  ${i + 1}/${ingredients.length} scored (${elapsed}s) — ontology: ${ontologyHits}, mapped: ${mapped}, review: ${review}, no_match: ${noMatch}`,
         );
       }
     }
@@ -581,6 +745,7 @@ async function main() {
     const noMatch = results.filter((r) => r.status === "no_match");
 
     console.log("=== Results ===");
+    console.log(`  ontology:     ${ontologyHits} direct + ${ontologyBoosted} boosted (${(((ontologyHits + ontologyBoosted) / results.length) * 100).toFixed(1)}%)`);
     console.log(`  mapped:       ${mapped.length} (${((mapped.length / results.length) * 100).toFixed(1)}%)`);
     console.log(`  needs_review: ${review.length} (${((review.length / results.length) * 100).toFixed(1)}%)`);
     console.log(`  no_match:     ${noMatch.length} (${((noMatch.length / results.length) * 100).toFixed(1)}%)`);
@@ -653,7 +818,6 @@ async function main() {
     }
 
     console.log("\n=== Writing to database ===");
-    await client.query("BEGIN");
 
     // P2 fix: Check if run_id already exists (prevents duplicate key errors or partial overwrites)
     const existingRun = await client.query(
@@ -670,7 +834,8 @@ async function main() {
     // P2: Ensure staging table exists before writing
     await ensureStagingTable(client);
 
-    // 1. Insert run record
+    // 1. Insert run record (committed immediately so partial writes are recoverable)
+    await client.query("BEGIN");
     await client.query(
       `INSERT INTO lexical_mapping_runs
         (run_id, git_sha, config_json, tokenizer_hash, idf_hash, status,
@@ -681,6 +846,7 @@ async function main() {
         results.length, mapped.length, review.length, noMatch.length,
       ],
     );
+    await client.query("COMMIT");
     console.log("  Run record inserted");
 
     // 2. Build winner rows
@@ -689,7 +855,6 @@ async function main() {
       const fdcId = r.status !== "no_match" && r.bestFood ? r.bestFood.fdcId : null;
       const reasonCodes = r.best ? deriveReasonCodes(r.best, r.status) : ["status:no_match"];
 
-      // Write run-scoped winners into a staging table (run_id + ingredient_key).
       winnerRows.push([
         runId,
         r.ingredient.slug,  // ingredient_key
@@ -704,10 +869,8 @@ async function main() {
       ]);
     }
 
-    // Write to canonical_fdc_membership_staging (run-scoped winners)
+    // Write to canonical_fdc_membership_staging — commit every 500 rows
     console.log("  Writing winner mappings...");
-
-    // Batch insert 500 rows at a time to avoid connection timeouts
     const BATCH_SIZE = 500;
     let insertErrors = 0;
     for (let i = 0; i < winnerRows.length; i += BATCH_SIZE) {
@@ -721,6 +884,7 @@ async function main() {
         values.push(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]);
       }
       try {
+        await client.query("BEGIN");
         await client.query(
           `INSERT INTO canonical_fdc_membership_staging
             (run_id, ingredient_key, ingredient_text, fdc_id, score, status, reason_codes, candidate_description, candidate_category, review_flag)
@@ -728,7 +892,9 @@ async function main() {
            ON CONFLICT (run_id, ingredient_key) DO NOTHING`,
           values,
         );
+        await client.query("COMMIT");
       } catch (err) {
+        await client.query("ROLLBACK").catch(() => {});
         insertErrors += batch.length;
         console.error(`  Error inserting batch ${Math.floor(i/BATCH_SIZE)+1}: ${err instanceof Error ? err.message : err}`);
       }
@@ -736,60 +902,70 @@ async function main() {
     }
     console.log(`  ${winnerRows.length - insertErrors} winner mappings written${insertErrors > 0 ? ` (${insertErrors} errors)` : ""}`);
 
-    // Also record minimal breakdowns (audit)
-    for (const row of winnerRows) {
-      await client.query(
-        `INSERT INTO canonical_fdc_membership_breakdowns
-          (run_id, ingredient_key, fdc_id, breakdown_json)
-         VALUES ($1, $2, $3, $4::jsonb)
-         ON CONFLICT (run_id, ingredient_key) DO NOTHING`,
-        [
-          row[0], // run_id
-          row[1], // ingredient_key
-          row[3], // fdc_id
-          JSON.stringify({
-            ingredient_text: row[2],
-            score: row[4],
-            status: row[5],
-            reason_codes: row[6],
-            candidate_description: row[7],
-            candidate_category: row[8],
-          }),
-        ],
-      );
-    }
-
-    // 3. Write breakdowns if requested
-    if (opts.breakdowns) {
-      console.log("  Writing full score breakdowns...");
-      for (const r of results) {
-        if (!r.best || !r.bestFood) continue;
+    // Breakdowns — commit every 500
+    console.log("  Writing breakdowns...");
+    for (let i = 0; i < winnerRows.length; i += BATCH_SIZE) {
+      const batch = winnerRows.slice(i, i + BATCH_SIZE);
+      await client.query("BEGIN");
+      for (const row of batch) {
         await client.query(
-          `UPDATE canonical_fdc_membership_breakdowns
-           SET breakdown_json = $1::jsonb
-           WHERE run_id = $2 AND ingredient_key = $3`,
+          `INSERT INTO canonical_fdc_membership_breakdowns
+            (run_id, ingredient_key, fdc_id, breakdown_json)
+           VALUES ($1, $2, $3, $4::jsonb)
+           ON CONFLICT (run_id, ingredient_key) DO NOTHING`,
           [
+            row[0], row[1], row[3],
             JSON.stringify({
-              ingredient_text: r.ingredientText,
-              ingredient_normalized: r.ingredient.normalized,
-              ingredient_core_tokens: r.ingredient.coreTokens,
-              ingredient_state_tokens: r.ingredient.stateTokens,
-              ingredient_total_weight: r.ingredient.totalWeight,
-              candidate_fdc_id: r.bestFood.fdcId,
-              candidate_description: r.bestFood.description,
-              candidate_category: r.bestFood.categoryName,
-              candidate_inverted_name: r.bestFood.invertedName,
-              candidate_core_tokens: r.bestFood.coreTokens,
-              score: r.best.score,
-              status: r.status,
-              reason: r.best.reason,
-              breakdown: r.best.breakdown,
-              reason_codes: deriveReasonCodes(r.best, r.status),
+              ingredient_text: row[2],
+              score: row[4],
+              status: row[5],
+              reason_codes: row[6],
+              candidate_description: row[7],
+              candidate_category: row[8],
             }),
-            runId,
-            r.ingredient.slug,
           ],
         );
+      }
+      await client.query("COMMIT");
+      console.log(`  ${Math.min(i + BATCH_SIZE, winnerRows.length)}/${winnerRows.length} breakdowns written`);
+    }
+
+    // 3. Write full breakdowns if requested
+    if (opts.breakdowns) {
+      console.log("  Writing full score breakdowns...");
+      for (let i = 0; i < results.length; i += BATCH_SIZE) {
+        const batch = results.slice(i, i + BATCH_SIZE);
+        await client.query("BEGIN");
+        for (const r of batch) {
+          if (!r.best || !r.bestFood) continue;
+          await client.query(
+            `UPDATE canonical_fdc_membership_breakdowns
+             SET breakdown_json = $1::jsonb
+             WHERE run_id = $2 AND ingredient_key = $3`,
+            [
+              JSON.stringify({
+                ingredient_text: r.ingredientText,
+                ingredient_normalized: r.ingredient.normalized,
+                ingredient_core_tokens: r.ingredient.coreTokens,
+                ingredient_state_tokens: r.ingredient.stateTokens,
+                ingredient_total_weight: r.ingredient.totalWeight,
+                candidate_fdc_id: r.bestFood.fdcId,
+                candidate_description: r.bestFood.description,
+                candidate_category: r.bestFood.categoryName,
+                candidate_inverted_name: r.bestFood.invertedName,
+                candidate_core_tokens: r.bestFood.coreTokens,
+                score: r.best.score,
+                status: r.status,
+                reason: r.best.reason,
+                breakdown: r.best.breakdown,
+                reason_codes: deriveReasonCodes(r.best, r.status),
+              }),
+              runId,
+              r.ingredient.slug,
+            ],
+          );
+        }
+        await client.query("COMMIT");
       }
       console.log("  Breakdowns written");
     }
@@ -798,27 +974,38 @@ async function main() {
     if (opts.candidates) {
       console.log("  Writing near-tie candidates...");
       let candidateCount = 0;
+      const candidateRows: unknown[][] = [];
       for (const r of results) {
         for (let rank = 0; rank < r.nearTies.length && rank < 10; rank++) {
           const tie = r.nearTies[rank];
+          candidateRows.push([runId, r.ingredient.slug, tie.food.fdcId, tie.match.score, rank + 1]);
+          candidateCount++;
+        }
+      }
+      for (let i = 0; i < candidateRows.length; i += BATCH_SIZE) {
+        const batch = candidateRows.slice(i, i + BATCH_SIZE);
+        await client.query("BEGIN");
+        for (const row of batch) {
           await client.query(
             `INSERT INTO canonical_fdc_membership_candidates
               (run_id, ingredient_key, fdc_id, score, rank)
              VALUES ($1, $2, $3, $4, $5)
              ON CONFLICT (run_id, ingredient_key, fdc_id) DO NOTHING`,
-            [runId, r.ingredient.slug, tie.food.fdcId, tie.match.score, rank + 1],
+            row,
           );
-          candidateCount++;
         }
+        await client.query("COMMIT");
       }
       console.log(`  ${candidateCount} candidate rows written`);
     }
 
     // 5. Mark run as validated
+    await client.query("BEGIN");
     await client.query(
       `UPDATE lexical_mapping_runs SET status = 'validated' WHERE run_id = $1`,
       [runId],
     );
+    await client.query("COMMIT");
     console.log("  Run marked as validated");
 
     // 6. Promote if requested
@@ -833,14 +1020,17 @@ async function main() {
         for (const failure of tripwireFailures) {
           console.error(`  ${failure}`);
         }
+        await client.query("BEGIN");
         await client.query(
           `UPDATE lexical_mapping_runs SET status = 'failed', notes = $2 WHERE run_id = $1`,
           [runId, `Tripwire failures: ${tripwireFailures.join("; ")}`],
         );
+        await client.query("COMMIT");
         throw new Error(`Tripwire validation failed with ${tripwireFailures.length} errors. Run not promoted.`);
       }
       console.log("  ✓ All tripwires passed");
 
+      await client.query("BEGIN");
       await client.query(
         `UPDATE lexical_mapping_current
          SET current_run_id = $1, promoted_at = now()
@@ -851,14 +1041,13 @@ async function main() {
         `UPDATE lexical_mapping_runs SET status = 'promoted' WHERE run_id = $1`,
         [runId],
       );
+      await client.query("COMMIT");
       console.log("  Run promoted to current");
     }
 
-    await client.query("COMMIT");
     console.log(`\nDone. run_id = ${runId}`);
 
   } catch (err) {
-    await client.query("ROLLBACK").catch(() => {});
     throw err;
   } finally {
     client.release();

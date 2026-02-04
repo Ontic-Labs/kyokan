@@ -246,7 +246,7 @@ export const ResolveRequestSchema = z.object({
 });
 export type ResolveRequest = z.infer<typeof ResolveRequestSchema>;
 
-export const MatchMethodSchema = z.enum(["direct", "alias", "fuzzy"]);
+export const MatchMethodSchema = z.enum(["direct", "alias", "fuzzy", "ontology"]);
 export type MatchMethod = z.infer<typeof MatchMethodSchema>;
 
 export const ResolvedIngredientSchema = z.object({

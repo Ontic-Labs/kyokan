@@ -246,7 +246,7 @@ const PAREN_NOISE = [
   /\bUSDA\b/i,
   /\bpreviously\b/i,
   /\bsee\b/i,
-  /\bNFS\b/,
+  /\bnfs\b/i,
   /\bnot\b/i,
   /^\d/,
   /\d+\s*(mg|g|mcg|iu|%)/i,
@@ -477,7 +477,7 @@ export const CATEGORY_EXPECTATIONS = new Map<string, string[]>([
   // Fats and oils
   ["oil", ["Fats and Oils"]],
   // Dairy
-  ["butter", ["Dairy and Egg Products", "Fats and Oils"]],
+  ["butter", ["Dairy and Egg Products"]],
   ["cream", ["Dairy and Egg Products"]],
   ["cheese", ["Dairy and Egg Products"]],
   ["milk", ["Dairy and Egg Products"]],
@@ -647,6 +647,8 @@ export const SYNONYM_TABLE = new Map<string, string[][]>([
   ["cold water", [["water", "tap"]]],
   ["vanilla", [["vanilla", "extract"]]],
   ["pure vanilla extract", [["vanilla", "extract"]]],
+  ["butter", [["butter", "salted"]]],
+  ["unsalted butter", [["butter", "without"]]],
   ["bacon", [["pork"]]],
   ["potatoes", [["potatoes"]]],
   ["mayonnaise", [["mayonnaise"]]],
@@ -1014,6 +1016,13 @@ export function scoreCandidate(
       for (const token of ingredient.coreTokens) {
         if (segSet?.has(token)) {
           oRestWeight += idf.weight(token);
+        } else {
+          for (const variant of pluralVariants(token)) {
+            if (segSet?.has(variant)) {
+              oRestWeight += idf.weight(token) * 0.9;
+              break;
+            }
+          }
         }
       }
     }
@@ -1228,7 +1237,7 @@ export function preNormalize(name: string): string {
   n = n.replace(/^(.+),\s*juice of$/i, "$1 juice");
   n = n.replace(/^(.+),\s*zest of$/i, "$1 zest");
   n = n.replace(/^(.+),\s*rind of$/i, "$1 rind");
-  n = n.replace(/^(.+),\s*juice and zest of$/i, "$1 juice");
+  n = n.replace(/^(.+),\s*juice and zest of$/i, "$1 juice and $1 zest");
   n = n.replace(/^of\s+/i, "");
   n = n.replace(/\s*&\s*/g, " and ");
   n = n.replace(/^\d+%\s+/, "");
@@ -1249,7 +1258,8 @@ export function preNormalize(name: string): string {
   const words = n.trim().split(/\s+/);
   if (words.length > 1) {
     const filtered = words.filter((w) => !UNIT_NOISE_WORDS.has(w.toLowerCase()));
-    if (filtered.length > 0) {
+    const hasNonState = filtered.some((w) => !STATE_TOKEN_SET.has(w.toLowerCase()));
+    if (filtered.length > 0 && hasNonState) {
       n = filtered.join(" ");
     }
   }
@@ -1331,7 +1341,7 @@ export function processIngredient(
 // Decision thresholds
 // ---------------------------------------------------------------------------
 
-export const THRESHOLD_MAPPED = 0.80;
+export const THRESHOLD_MAPPED = 0.75;
 export const THRESHOLD_REVIEW = 0.40;
 export const NEAR_TIE_DELTA = 0.05;
 

@@ -1,0 +1,1334 @@
+[
+  {
+    "normalized_name": "all-beef hot dogs",
+    "canonical_name": "beef franks",
+    "synonyms": [
+      "frankfurter, beef, unheated"
+    ],
+    "fdc_id": 323121
+  },
+  {
+    "normalized_name": "almond butter",
+    "canonical_name": "Almond butter",
+    "synonyms": [
+      "almond butter, creamy",
+      "dairy butter"
+    ],
+    "fdc_id": 2262074
+  },
+  {
+    "normalized_name": "almond flour",
+    "canonical_name": "Almond flour",
+    "synonyms": [
+      "flour, almond"
+    ],
+    "fdc_id": 2261420
+  },
+  {
+    "normalized_name": "almond milk",
+    "canonical_name": "Almond milk",
+    "synonyms": [
+      "almond milk, unsweetened, plain, shelf stable"
+    ],
+    "fdc_id": 1999631
+  },
+  {
+    "normalized_name": "andouille sausage",
+    "canonical_name": "sausage",
+    "synonyms": [
+      "100% organic rubbed sage"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "apples",
+    "canonical_name": "Apples",
+    "synonyms": [
+      "apples, red delicious, with skin"
+    ],
+    "fdc_id": 1750339
+  },
+  {
+    "normalized_name": "aquafaba",
+    "canonical_name": "Aquafaba",
+    "synonyms": [
+      "Aquafaba",
+      "Homemade Aquafaba",
+      "Homemade Aquafaba from Chickpeas"
+    ],
+    "fdc_id": 93401015
+  },
+  {
+    "normalized_name": "arugula",
+    "canonical_name": "arugula",
+    "synonyms": [
+      "arugula, baby"
+    ],
+    "fdc_id": 2710822
+  },
+  {
+    "normalized_name": "asparagus",
+    "canonical_name": "asparagus",
+    "synonyms": [
+      "asparagus, green"
+    ],
+    "fdc_id": 2710823
+  },
+  {
+    "normalized_name": "avocado",
+    "canonical_name": "avocado",
+    "synonyms": [
+      "avocado, hass, peeled"
+    ],
+    "fdc_id": 2710824
+  },
+  {
+    "normalized_name": "baguette",
+    "canonical_name": "baguette",
+    "synonyms": [
+      "bread, french or vienna"
+    ],
+    "fdc_id": 2707610
+  },
+  {
+    "normalized_name": "baking powder",
+    "canonical_name": "baking powder",
+    "synonyms": [
+      "baking",
+      "baking seasoning"
+    ],
+    "fdc_id": 172805
+  },
+  {
+    "normalized_name": "baking soda",
+    "canonical_name": "baking soda",
+    "synonyms": [
+      "sodium bicarbonate"
+    ],
+    "fdc_id": 175040
+  },
+  {
+    "normalized_name": "balsamic vinegar",
+    "canonical_name": "balsamic vinegar",
+    "synonyms": [
+      "whole foods market, aged balsamic vinegar"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "banana",
+    "canonical_name": "banana",
+    "synonyms": [
+      "bananas, overripe"
+    ],
+    "fdc_id": 1105073
+  },
+  {
+    "normalized_name": "basmati rice",
+    "canonical_name": "Basmati rice",
+    "synonyms": [
+      "rice, white"
+    ],
+    "fdc_id": 169756
+  },
+  {
+    "normalized_name": "bay leaves",
+    "canonical_name": "bay leaf",
+    "synonyms": [
+      "100% organic california bay leaves"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "beef broth",
+    "canonical_name": "beef broth",
+    "synonyms": [
+      "kettle & fire, beef bone broth"
+    ],
+    "fdc_id": 2653386
+  },
+  {
+    "normalized_name": "beef chuck roast",
+    "canonical_name": "beef chuck",
+    "synonyms": [
+      "beef, chuck, roast, boneless, choice"
+    ],
+    "fdc_id": 2646174
+  },
+  {
+    "normalized_name": "beef short ribs",
+    "canonical_name": "beef short ribs",
+    "synonyms": [
+      ", chuck, short ribs, boneless, separable lean and fat, trimmed to 0 fat, choice"
+    ],
+    "fdc_id": 170827
+  },
+  {
+    "normalized_name": "beef sirloin",
+    "canonical_name": "beef sirloin",
+    "synonyms": [
+      "beef, top sirloin steak"
+    ],
+    "fdc_id": 2727574
+  },
+  {
+    "normalized_name": "black beans",
+    "canonical_name": "black beans",
+    "synonyms": [
+      "beans, dry, black (0% moisture)"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "black peppercorns",
+    "canonical_name": "black peppercorns",
+    "synonyms": [
+      "100% organic coarse ground black pepper",
+      "black peppercorncorns"
+    ],
+    "fdc_id": 2023001
+  },
+  {
+    "normalized_name": "bread",
+    "canonical_name": "bread",
+    "synonyms": [
+      "bread, whole-wheat, commercially prepared"
+    ],
+    "fdc_id": 335240
+  },
+  {
+    "normalized_name": "breadcrumbs",
+    "canonical_name": "breadcrumbs",
+    "synonyms": [
+      "bread, white, commercially prepared"
+    ],
+    "fdc_id": 325871
+  },
+  {
+    "normalized_name": "bread flour",
+    "canonical_name": "bread flour",
+    "synonyms": [
+      "flour, bread, white, enriched, unbleached"
+    ],
+    "fdc_id": 790146
+  },
+  {
+    "normalized_name": "buttermilk",
+    "canonical_name": "buttermilk",
+    "synonyms": [
+      "buttermilk, low fat",
+      "dairy butter"
+    ],
+    "fdc_id": 2259792
+  },
+  {
+    "normalized_name": "button mushrooms",
+    "canonical_name": "button mushrooms",
+    "synonyms": [
+      "mushrooms, white button"
+    ],
+    "fdc_id": 1999629
+  },
+  {
+    "normalized_name": "canned chickpeas",
+    "canonical_name": "canned chickpeas",
+    "synonyms": [
+      "chickpeas (garbanzo beans, bengal gram)"
+    ],
+    "fdc_id": 2644288
+  },
+  {
+    "normalized_name": "canned tomatoes",
+    "canonical_name": "diced tomatoes",
+    "synonyms": [
+      "tomatoes"
+    ],
+    "fdc_id": 333281
+  },
+  {
+    "normalized_name": "canned whole tomatoes",
+    "canonical_name": "canned whole tomatoes",
+    "synonyms": [
+      "tomatoes, whole"
+    ],
+    "fdc_id": 2685578
+  },
+  {
+    "normalized_name": "cannellini beans",
+    "canonical_name": "Cannellini Beans",
+    "synonyms": [
+      "beans, cannellini"
+    ],
+    "fdc_id": 2644287
+  },
+  {
+    "normalized_name": "cardamom pods",
+    "canonical_name": "cardamom pods",
+    "synonyms": [
+      "100% organic cardamom"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "cayenne pepper",
+    "canonical_name": "cayenne pepper",
+    "synonyms": [
+      "100% organic cayenne pepper",
+      "cayenne peppercorn"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "celery salt",
+    "canonical_name": "Celery Salt",
+    "synonyms": [
+      "celery seasoning"
+    ],
+    "fdc_id": 171323
+  },
+  {
+    "normalized_name": "cherry tomatoes",
+    "canonical_name": "Cherry tomatoes",
+    "synonyms": [
+      "tomatoes, grape"
+    ],
+    "fdc_id": 321360
+  },
+  {
+    "normalized_name": "chia seeds",
+    "canonical_name": "chia seeds",
+    "synonyms": [
+      "chia seeds, dry"
+    ],
+    "fdc_id": 2710819
+  },
+  {
+    "normalized_name": "chicken breasts",
+    "canonical_name": "chicken breast",
+    "synonyms": [
+      "chicken, breast, boneless, skinless"
+    ],
+    "fdc_id": 2646170
+  },
+  {
+    "normalized_name": "chicken broth",
+    "canonical_name": "chicken broth",
+    "synonyms": [
+      "chicken low sodium broth, chicken"
+    ],
+    "fdc_id": 2653385
+  },
+  {
+    "normalized_name": "chicken wings",
+    "canonical_name": "chicken wings",
+    "synonyms": [
+      "chicken, wing, meat and skin"
+    ],
+    "fdc_id": 2727568
+  },
+  {
+    "normalized_name": "chickpea flour",
+    "canonical_name": "chickpea flour",
+    "synonyms": [
+      "chickpea chips, chickpea"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "chili powder",
+    "canonical_name": "chili sauce",
+    "synonyms": [
+      "100% organic chili powder",
+      "chili",
+      "chili seasoning"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "cilantro",
+    "canonical_name": "cilantro",
+    "synonyms": [
+      "coriander leaves",
+      "fresh coriander",
+      "100% organic cilantro"
+    ],
+    "fdc_id": 169997
+  },
+  {
+    "normalized_name": "cinnamon stick",
+    "canonical_name": "cinnamon",
+    "synonyms": [
+      "100% organic ground cinnamon"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "clarified butter",
+    "canonical_name": "nut butter",
+    "synonyms": [
+      "unsalted butter",
+      "dairy butter"
+    ],
+    "fdc_id": 2338388
+  },
+  {
+    "normalized_name": "cocoa powder",
+    "canonical_name": "cocoa powder",
+    "synonyms": [
+      "unsweetened organic cocoa powder, unsweetened",
+      "cocoa",
+      "cocoa seasoning"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "coconut milk",
+    "canonical_name": "coconut milk",
+    "synonyms": [
+      "11370000"
+    ],
+    "fdc_id": 2705413
+  },
+  {
+    "normalized_name": "coconut oil",
+    "canonical_name": "coconut oil",
+    "synonyms": [
+      "oil, coconut",
+      "coconut"
+    ],
+    "fdc_id": 330458
+  },
+  {
+    "normalized_name": "coriander powder",
+    "canonical_name": "coriander powder",
+    "synonyms": [
+      "100% organic coriander seed",
+      "coriander",
+      "coriander seasoning"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "cornstarch",
+    "canonical_name": "cornstarch",
+    "synonyms": [
+      "corn flour"
+    ],
+    "fdc_id": 2671891
+  },
+  {
+    "normalized_name": "cotija cheese",
+    "canonical_name": "cotija cheese",
+    "synonyms": [
+      "cheese, cotija, solid",
+      "cotija"
+    ],
+    "fdc_id": 2647443
+  },
+  {
+    "normalized_name": "cottage cheese",
+    "canonical_name": "cottage cheese",
+    "synonyms": [
+      "cottage cheese, full fat, large or small curd",
+      "cottage"
+    ],
+    "fdc_id": 2346384
+  },
+  {
+    "normalized_name": "cream cheese",
+    "canonical_name": "cream cheese",
+    "synonyms": [
+      "cream cheese, full fat, block",
+      "cream"
+    ],
+    "fdc_id": 2346385
+  },
+  {
+    "normalized_name": "crushed tomatoes",
+    "canonical_name": "crushed tomatoes",
+    "synonyms": [
+      "tomatoes, crushed"
+    ],
+    "fdc_id": 2685581
+  },
+  {
+    "normalized_name": "cucumber",
+    "canonical_name": "cucumber",
+    "synonyms": [
+      "cucumber, with peel"
+    ],
+    "fdc_id": 2346406
+  },
+  {
+    "normalized_name": "dill pickle spears",
+    "canonical_name": "pickles",
+    "synonyms": [
+      "pickles, cucumber, dill or kosher dill"
+    ],
+    "fdc_id": 324653
+  },
+  {
+    "normalized_name": "dried ancho chilies",
+    "canonical_name": "dried ancho chilies",
+    "synonyms": [
+      "ancho chili peppers"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "dried oregano",
+    "canonical_name": "dried oregano",
+    "synonyms": [
+      "100% organic oregano"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "eggs",
+    "canonical_name": "Eggs",
+    "synonyms": [
+      "eggs, grade a, large, egg whole"
+    ],
+    "fdc_id": 748967
+  },
+  {
+    "normalized_name": "feta cheese",
+    "canonical_name": "feta cheese",
+    "synonyms": [
+      "cheese, feta, whole milk, crumbled",
+      "feta"
+    ],
+    "fdc_id": 2259796
+  },
+  {
+    "normalized_name": "fish meal",
+    "canonical_name": "fish meal",
+    "synonyms": [
+      "soy meal, defatted"
+    ],
+    "fdc_id": 172445
+  },
+  {
+    "normalized_name": "flank steak",
+    "canonical_name": "flank steak",
+    "synonyms": [
+      "beef, flank, steak, boneless, choice"
+    ],
+    "fdc_id": 2646175
+  },
+  {
+    "normalized_name": "fresh basil",
+    "canonical_name": "basil",
+    "synonyms": [
+      "100% organic basil"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "fresh chives",
+    "canonical_name": "fresh chives",
+    "synonyms": [
+      "chives"
+    ],
+    "fdc_id": 2709781
+  },
+  {
+    "normalized_name": "fresh dill",
+    "canonical_name": "Fresh dill",
+    "synonyms": [
+      "100% organic dill weed"
+    ],
+    "fdc_id": 172233
+  },
+  {
+    "normalized_name": "fresh parsley",
+    "canonical_name": "parsley",
+    "synonyms": [
+      "100% organic parsley"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "fresh peaches",
+    "canonical_name": "fresh peaches",
+    "synonyms": [
+      "peaches, yellow"
+    ],
+    "fdc_id": 325430
+  },
+  {
+    "normalized_name": "fresh rosemary",
+    "canonical_name": "fresh rosemary",
+    "synonyms": [
+      "100% organic rosemary"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "frozen green beans",
+    "canonical_name": "green beans",
+    "synonyms": [
+      "beans, snap, green"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "garam masala",
+    "canonical_name": "garam masala",
+    "synonyms": [
+      "100% organic curry"
+    ],
+    "fdc_id": 170924
+  },
+  {
+    "normalized_name": "garlic cloves",
+    "canonical_name": "Garlic cloves",
+    "synonyms": [
+      "garlic"
+    ],
+    "fdc_id": 1104647
+  },
+  {
+    "normalized_name": "garlic powder",
+    "canonical_name": "garlic powder",
+    "synonyms": [
+      "garlic",
+      "garlic seasoning"
+    ],
+    "fdc_id": 171325
+  },
+  {
+    "normalized_name": "ginger",
+    "canonical_name": "ginger",
+    "synonyms": [
+      "100% organic ground ginger"
+    ],
+    "fdc_id": 169231
+  },
+  {
+    "normalized_name": "ginger-garlic paste",
+    "canonical_name": "black garlic",
+    "synonyms": [
+      "100% organic granulated garlic with parsley, parsley"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "gochujang (korean chili paste)",
+    "canonical_name": "Gochujang",
+    "synonyms": [
+      "gochujang fermented chile paste garlic"
+    ],
+    "fdc_id": 2025079
+  },
+  {
+    "normalized_name": "greek yogurt",
+    "canonical_name": "yogurt",
+    "synonyms": [
+      "yogurt, greek, plain, nonfat"
+    ],
+    "fdc_id": 330137
+  },
+  {
+    "normalized_name": "ground beef",
+    "canonical_name": "ground beef",
+    "synonyms": [
+      "beef, ground, 90% lean meat / 10% fat"
+    ],
+    "fdc_id": 2514743
+  },
+  {
+    "normalized_name": "ground cumin",
+    "canonical_name": "cumin",
+    "synonyms": [
+      "100% organic ground cumin"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "ground nutmeg",
+    "canonical_name": "Spices, nutmeg, ground",
+    "synonyms": [
+      "ground nutmeg"
+    ],
+    "fdc_id": 171326
+  },
+  {
+    "normalized_name": "ground pork",
+    "canonical_name": "ground pork",
+    "synonyms": [
+      "pork, ground"
+    ],
+    "fdc_id": 2705863
+  },
+  {
+    "normalized_name": "ham",
+    "canonical_name": "ham",
+    "synonyms": [
+      "uncured ham"
+    ],
+    "fdc_id": 2326373
+  },
+  {
+    "normalized_name": "heavy cream",
+    "canonical_name": "heavy cream",
+    "synonyms": [
+      "heavy whipping cream",
+      "double cream",
+      "cream"
+    ],
+    "fdc_id": 2346386
+  },
+  {
+    "normalized_name": "hot dog buns",
+    "canonical_name": "hot dog buns",
+    "synonyms": [
+      "white organic hot dog buns, white"
+    ],
+    "fdc_id": 2677788
+  },
+  {
+    "normalized_name": "hot sauce",
+    "canonical_name": "hot sauce",
+    "synonyms": [
+      "hot pepper sauce"
+    ],
+    "fdc_id": 2710093
+  },
+  {
+    "normalized_name": "hummus",
+    "canonical_name": "hummus",
+    "synonyms": [
+      "hummus, commercial"
+    ],
+    "fdc_id": 321358
+  },
+  {
+    "normalized_name": "instant yeast",
+    "canonical_name": "instant yeast",
+    "synonyms": [
+      "rapidrise instant yeast"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "italian sausage",
+    "canonical_name": "italian sausage",
+    "synonyms": [
+      "sausage, italian, pork, mild"
+    ],
+    "fdc_id": 746780
+  },
+  {
+    "normalized_name": "italian seasoning",
+    "canonical_name": "italian seasoning",
+    "synonyms": [
+      "100% organic italian seasoning, italian"
+    ],
+    "fdc_id": 171328
+  },
+  {
+    "normalized_name": "ketchup",
+    "canonical_name": "ketchup",
+    "synonyms": [
+      "ketchup, restaurant"
+    ],
+    "fdc_id": 747693
+  },
+  {
+    "normalized_name": "kidney beans",
+    "canonical_name": "kidney beans",
+    "synonyms": [
+      "beans, dry, light red kidney (0% moisture)"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "large eggs",
+    "canonical_name": "Eggs, Large, Egg Whole",
+    "synonyms": [
+      "eggs, grade a, large, egg white"
+    ],
+    "fdc_id": 748967
+  },
+  {
+    "normalized_name": "lean stew beef",
+    "canonical_name": "lean stew beef",
+    "synonyms": [
+      "beef, loin, tenderloin roast, separable lean only, boneless, trimmed to 0 fat, select"
+    ],
+    "fdc_id": 746758
+  },
+  {
+    "normalized_name": "lemon",
+    "canonical_name": "lemon",
+    "synonyms": [
+      "lemon raw"
+    ],
+    "fdc_id": 2709168
+  },
+  {
+    "normalized_name": "lemon juice",
+    "canonical_name": "Lemon juice",
+    "synonyms": [
+      "lemon juice 100% freshly squeezed"
+    ],
+    "fdc_id": 2709181
+  },
+  {
+    "normalized_name": "lentils",
+    "canonical_name": "lentils",
+    "synonyms": [
+      "lentils, dry"
+    ],
+    "fdc_id": 2644283
+  },
+  {
+    "normalized_name": "lime juice",
+    "canonical_name": "fresh lime juice",
+    "synonyms": [
+      "lime juice, 100%"
+    ],
+    "fdc_id": 2709184
+  },
+  {
+    "normalized_name": "lime wedges",
+    "canonical_name": "lime wedges",
+    "synonyms": [
+      "lime"
+    ],
+    "fdc_id": 2709170
+  },
+  {
+    "normalized_name": "long-grain white rice",
+    "canonical_name": "long-grain white rice",
+    "synonyms": [
+      "rice, white, long grain, unenriched"
+    ],
+    "fdc_id": 2512381
+  },
+  {
+    "normalized_name": "marinara sauce",
+    "canonical_name": "marinara sauce",
+    "synonyms": [
+      "sauce, pasta, spaghetti/marinara, ready-to-serve,soups, sauces"
+    ],
+    "fdc_id": 332282
+  },
+  {
+    "normalized_name": "mayonnaise",
+    "canonical_name": "mayonnaise",
+    "synonyms": [
+      "mayonnaise regular"
+    ],
+    "fdc_id": 2710204
+  },
+  {
+    "normalized_name": "mirin",
+    "canonical_name": "mirin",
+    "synonyms": [
+      "mirin sweet cooking sauce, mirin"
+    ],
+    "fdc_id": 2114521
+  },
+  {
+    "normalized_name": "mushrooms",
+    "canonical_name": "mushrooms",
+    "synonyms": [
+      "mushrooms, shiitake"
+    ],
+    "fdc_id": 1999628
+  },
+  {
+    "normalized_name": "mustard seeds",
+    "canonical_name": "mustard seeds",
+    "synonyms": [
+      "mustard seed"
+    ],
+    "fdc_id": 501378
+  },
+  {
+    "normalized_name": "napa cabbage",
+    "canonical_name": "napa cabbage",
+    "synonyms": [
+      "cabbage, napa, leaf, destemmed"
+    ],
+    "fdc_id": 2727583
+  },
+  {
+    "normalized_name": "neutral vegetable oil",
+    "canonical_name": "Vegetable Oil",
+    "synonyms": [
+      "vegetable"
+    ],
+    "fdc_id": 2192261
+  },
+  {
+    "normalized_name": "non-iodized salt",
+    "canonical_name": "sea salt",
+    "synonyms": [
+      "sea salt",
+      "table salt"
+    ],
+    "fdc_id": 2573382
+  },
+  {
+    "normalized_name": "nori sheets",
+    "canonical_name": "nori sheets",
+    "synonyms": [
+      "pacific sushi nori sheets"
+    ],
+    "fdc_id": 2488997
+  },
+  {
+    "normalized_name": "nutmeg",
+    "canonical_name": "nutmeg",
+    "synonyms": [
+      "100% organic ground nutmeg"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "oaxaca cheese",
+    "canonical_name": "oaxaca cheese",
+    "synonyms": [
+      "cheese, oaxaca, solid",
+      "oaxaca"
+    ],
+    "fdc_id": 2647441
+  },
+  {
+    "normalized_name": "old-fashioned rolled oats",
+    "canonical_name": "rolled oats",
+    "synonyms": [
+      "oats, whole grain, rolled, old fashioned"
+    ],
+    "fdc_id": 2346396
+  },
+  {
+    "normalized_name": "olives",
+    "canonical_name": "olives",
+    "synonyms": [
+      "olives, green, manzanilla, stuffed with pimiento"
+    ],
+    "fdc_id": 332791
+  },
+  {
+    "normalized_name": "onion powder",
+    "canonical_name": "onion powder",
+    "synonyms": [
+      "onion",
+      "onion seasoning"
+    ],
+    "fdc_id": 171327
+  },
+  {
+    "normalized_name": "organic brown rice",
+    "canonical_name": "organic brown rice",
+    "synonyms": [
+      "rice, brown, long grain, unenriched"
+    ],
+    "fdc_id": 2512380
+  },
+  {
+    "normalized_name": "organic sweet potatoes",
+    "canonical_name": "sweet potatoes",
+    "synonyms": [
+      "sweet potatoes, orange flesh, without skin"
+    ],
+    "fdc_id": 2346404
+  },
+  {
+    "normalized_name": "panko breadcrumbs",
+    "canonical_name": "Panko breadcrumbs",
+    "synonyms": [
+      "panko bread crumbs, panko"
+    ],
+    "fdc_id": 2424669
+  },
+  {
+    "normalized_name": "paprika",
+    "canonical_name": "paprika",
+    "synonyms": [
+      "100% organic paprika"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "parmesan cheese",
+    "canonical_name": "parmesan cheese",
+    "synonyms": [
+      "cheese, parmesan, grated",
+      "parmesan"
+    ],
+    "fdc_id": 325036
+  },
+  {
+    "normalized_name": "peanut butter",
+    "canonical_name": "peanut butter",
+    "synonyms": [
+      "dairy butter",
+      "peanut butter, creamy"
+    ],
+    "fdc_id": 2262072
+  },
+  {
+    "normalized_name": "pecan halves",
+    "canonical_name": "pecan halves",
+    "synonyms": [
+      "nuts, pecans, halves"
+    ],
+    "fdc_id": 2346395
+  },
+  {
+    "normalized_name": "pickled sport peppers",
+    "canonical_name": "Pickled Sport Peppers",
+    "synonyms": [
+      "pickled peppers",
+      "hot pickled peppers"
+    ],
+    "fdc_id": 168571
+  },
+  {
+    "normalized_name": "pine nuts",
+    "canonical_name": "pine nuts",
+    "synonyms": [
+      "nuts, pine nuts"
+    ],
+    "fdc_id": 2346392
+  },
+  {
+    "normalized_name": "pinto beans",
+    "canonical_name": "pinto beans",
+    "synonyms": [
+      "beans, dry, pinto (0% moisture)"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "pita bread",
+    "canonical_name": "pita bread",
+    "synonyms": [
+      "bread, pita"
+    ],
+    "fdc_id": 2707616
+  },
+  {
+    "normalized_name": "pork belly",
+    "canonical_name": "pork belly",
+    "synonyms": [
+      "pork, belly, with skin"
+    ],
+    "fdc_id": 2727576
+  },
+  {
+    "normalized_name": "powdered sugar",
+    "canonical_name": "powdered sugar",
+    "synonyms": [
+      "confectioners sugar",
+      "icing sugar",
+      "sugar, white, confectioner's, powdered",
+      "powdered sugar"
+    ],
+    "fdc_id": 2710259
+  },
+  {
+    "normalized_name": "provolone cheese",
+    "canonical_name": "provolone cheese",
+    "synonyms": [
+      "cheese, provolone, sliced",
+      "provolone"
+    ],
+    "fdc_id": 2647440
+  },
+  {
+    "normalized_name": "queso fresco cheese",
+    "canonical_name": "queso fresco cheese",
+    "synonyms": [
+      "cheese, queso fresco, solid",
+      "queso fresco"
+    ],
+    "fdc_id": 2647442
+  },
+  {
+    "normalized_name": "red bell pepper",
+    "canonical_name": "red bell pepper",
+    "synonyms": [
+      "peppers, bell, red"
+    ],
+    "fdc_id": 2258590
+  },
+  {
+    "normalized_name": "ribeye steak",
+    "canonical_name": "ribeye steak",
+    "synonyms": [
+      "beef ribeye",
+      "entrecote",
+      "rib eye",
+      "rib-eye",
+      "scotch fillet"
+    ],
+    "fdc_id": 171234
+  },
+  {
+    "normalized_name": "ricotta cheese",
+    "canonical_name": "ricotta cheese",
+    "synonyms": [
+      "cheese, ricotta, whole milk",
+      "ricotta"
+    ],
+    "fdc_id": 746766
+  },
+  {
+    "normalized_name": "roasted peanuts",
+    "canonical_name": "roasted peanuts",
+    "synonyms": [
+      "nuts, almonds, dry roasted, with salt added"
+    ],
+    "fdc_id": 323294
+  },
+  {
+    "normalized_name": "romaine lettuce",
+    "canonical_name": "lettuce",
+    "synonyms": [
+      "lettuce, cos or romaine"
+    ],
+    "fdc_id": 746769
+  },
+  {
+    "normalized_name": "russet potatoes",
+    "canonical_name": "Russet Potatoes, Raw",
+    "synonyms": [
+      "potatoes, russet, without skin"
+    ],
+    "fdc_id": 2346401
+  },
+  {
+    "normalized_name": "salmon fillets",
+    "canonical_name": "salmon fillet",
+    "synonyms": [
+      "fish, salmon, sockeye, wild caught"
+    ],
+    "fdc_id": 2684440
+  },
+  {
+    "normalized_name": "salsa",
+    "canonical_name": "salsa",
+    "synonyms": [
+      "sauce, salsa, ready-to-serve,soups, sauces"
+    ],
+    "fdc_id": 746777
+  },
+  {
+    "normalized_name": "salt",
+    "canonical_name": "salt",
+    "synonyms": [
+      "kosher salt",
+      "sea salt",
+      "table salt",
+      "fine salt",
+      "coarse salt",
+      "rock salt",
+      "himalayan salt",
+      "diamond crystal",
+      "morton salt"
+    ],
+    "fdc_id": 746775
+  },
+  {
+    "normalized_name": "salt and pepper",
+    "canonical_name": "salt pork",
+    "synonyms": [
+      "coarse kosher sea salt",
+      "salt and peppercorn",
+      "sea salt",
+      "table salt"
+    ],
+    "fdc_id": 2426246
+  },
+  {
+    "normalized_name": "scallions",
+    "canonical_name": "scallions",
+    "synonyms": [
+      "green onions",
+      "green onion, (scallion), bulb and greens, root removed",
+      "spring onions"
+    ],
+    "fdc_id": 2727585
+  },
+  {
+    "normalized_name": "sesame seeds",
+    "canonical_name": "sesame seeds",
+    "synonyms": [
+      "sesame seed"
+    ],
+    "fdc_id": 170150
+  },
+  {
+    "normalized_name": "shallots",
+    "canonical_name": "shallots",
+    "synonyms": [
+      "shallots, bulb, peeled, root removed"
+    ],
+    "fdc_id": 2727586
+  },
+  {
+    "normalized_name": "shredded lettuce",
+    "canonical_name": "shredded lettuce",
+    "synonyms": [
+      "lettuce, leaf, red"
+    ],
+    "fdc_id": 2346390
+  },
+  {
+    "normalized_name": "shredded monterey jack cheese",
+    "canonical_name": "monterey jack cheese",
+    "synonyms": [
+      "cheese, monterey jack, solid",
+      "shredded monterey jack"
+    ],
+    "fdc_id": 2647438
+  },
+  {
+    "normalized_name": "shrimp",
+    "canonical_name": "shrimp",
+    "synonyms": [
+      "crustaceans, shrimp, farm raised"
+    ],
+    "fdc_id": 2684443
+  },
+  {
+    "normalized_name": "smoked paprika",
+    "canonical_name": "smoked paprika",
+    "synonyms": [
+      "smoked paprika, smoked"
+    ],
+    "fdc_id": 2034709
+  },
+  {
+    "normalized_name": "sour cream",
+    "canonical_name": "sour cream",
+    "synonyms": [
+      "cream, sour, full fat"
+    ],
+    "fdc_id": 2346387
+  },
+  {
+    "normalized_name": "spaghetti",
+    "canonical_name": "Spaghetti",
+    "synonyms": [
+      "pasta"
+    ],
+    "fdc_id": 2708357
+  },
+  {
+    "normalized_name": "spinach",
+    "canonical_name": "spinach",
+    "synonyms": [
+      "spinach, baby"
+    ],
+    "fdc_id": 1999632
+  },
+  {
+    "normalized_name": "steel cut oats",
+    "canonical_name": "steel cut oats",
+    "synonyms": [
+      "oats, whole grain, steel cut"
+    ],
+    "fdc_id": 2346397
+  },
+  {
+    "normalized_name": "tomato paste",
+    "canonical_name": "tomato paste",
+    "synonyms": [
+      "tomato, paste"
+    ],
+    "fdc_id": 2685580
+  },
+  {
+    "normalized_name": "tomato puree",
+    "canonical_name": "tomato puree",
+    "synonyms": [
+      "tomato, puree"
+    ],
+    "fdc_id": 2685582
+  },
+  {
+    "normalized_name": "tomato sauce",
+    "canonical_name": "tomato sauce",
+    "synonyms": [
+      "tomato, sauce"
+    ],
+    "fdc_id": 2685579
+  },
+  {
+    "normalized_name": "truffle oil",
+    "canonical_name": "truffle oil",
+    "synonyms": [
+      "white truffle oil",
+      "truffle"
+    ],
+    "fdc_id": 2086250
+  },
+  {
+    "normalized_name": "turmeric powder",
+    "canonical_name": "turmeric",
+    "synonyms": [
+      "100% organic turmeric",
+      "turmeric",
+      "turmeric seasoning"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "unsalted butter",
+    "canonical_name": "butter",
+    "synonyms": [
+      "butter, stick, unsalted",
+      "dairy butter",
+      "sea salt",
+      "table salt"
+    ],
+    "fdc_id": 789828
+  },
+  {
+    "normalized_name": "vegetable broth",
+    "canonical_name": "vegetable broth",
+    "synonyms": [
+      "vegetable organic broth, vegetable"
+    ],
+    "fdc_id": 2653382
+  },
+  {
+    "normalized_name": "white onion",
+    "canonical_name": "white onion",
+    "synonyms": [
+      "onions, white"
+    ],
+    "fdc_id": 1104962
+  },
+  {
+    "normalized_name": "white rice",
+    "canonical_name": "white rice",
+    "synonyms": [
+      "long grain white rice"
+    ],
+    "fdc_id": 0
+  },
+  {
+    "normalized_name": "yellow mustard",
+    "canonical_name": "yellow mustard",
+    "synonyms": [
+      "mustard, prepared, yellow"
+    ],
+    "fdc_id": 326698
+  },
+  {
+    "normalized_name": "zucchini",
+    "canonical_name": "zucchini",
+    "synonyms": [
+      "squash, summer, green, zucchini, includes skin"
+    ],
+    "fdc_id": 2685568
+  }
+]
