@@ -67,27 +67,47 @@ const BOILERPLATE_PREFIXES = [
 ];
 
 // ---------------------------------------------------------------------------
-// Container categories: first comma segment is a broad category, not the
-// food identity. For these, segment[1] (+ segment[2]) becomes the base.
+// Container categories: first comma segment is a broad TAXONOMIC category,
+// not the food identity. For these, segment[1] (+ segment[2]) becomes the base.
+//
+// IMPORTANT: Only taxonomic containers belong here — categories where the
+// food identity is in segment[1], not segment[0].
+//   "Spices, pepper, black"  → base="pepper"  (correct: "pepper" IS the food)
+//   "Nuts, almonds"          → base="almonds"  (correct: "almonds" IS the food)
+//
+// Product categories (cookies, crackers, candies, puddings, snacks, cereals)
+// are the food identity themselves. "Cookies, butter" = butter cookies,
+// NOT "butter". These go in PRODUCT_CATEGORIES below.
 // ---------------------------------------------------------------------------
 
 export const CONTAINER_CATEGORIES = new Set([
   "spices",
   "nuts",
   "seeds",
-  "snacks",
   "beverages",
+  "salad dressing",
+  "sauce",
+  "oil",
+  "infant formula",
+  "babyfood",
+]);
+
+// ---------------------------------------------------------------------------
+// Product categories: first segment IS the food identity. Segment[1] is a
+// modifier/variety, not the base food. Word order: "modifier + base".
+//   "Cookies, butter"        → base="cookies", specific="butter cookies"
+//   "Crackers, graham"       → base="crackers", specific="graham crackers"
+//   "Candies, chocolate"     → base="candies", specific="chocolate candies"
+// ---------------------------------------------------------------------------
+
+export const PRODUCT_CATEGORIES = new Set([
+  "snacks",
   "candies",
   "cereals",
   "cereals ready-to-eat",
   "cookies",
   "crackers",
   "puddings",
-  "salad dressing",
-  "sauce",
-  "oil",
-  "infant formula",
-  "babyfood",
 ]);
 
 // ---------------------------------------------------------------------------
@@ -232,32 +252,49 @@ function removeStateTokens(text: string): { cleaned: string; removed: string[] }
 }
 
 /** Step 4: Extract base canonical name */
-function extractBase(segments: string[], isAlcohol: boolean): { base: string; isContainer: boolean } {
-  if (segments.length === 0) return { base: "unknown", isContainer: false };
+function extractBase(segments: string[], isAlcohol: boolean): { base: string; isContainer: boolean; isProduct: boolean } {
+  if (segments.length === 0) return { base: "unknown", isContainer: false, isProduct: false };
 
   if (isAlcohol) {
     // Domain rules for alcohol
-    if (segments.some((s) => s === "beer")) return { base: "beer", isContainer: false };
-    if (segments.some((s) => s === "wine")) return { base: "wine", isContainer: false };
-    if (segments[0] === "distilled") return { base: "distilled spirits", isContainer: false };
-    if (segments[0] === "liqueur") return { base: "liqueur", isContainer: false };
+    if (segments.some((s) => s === "beer")) return { base: "beer", isContainer: false, isProduct: false };
+    if (segments.some((s) => s === "wine")) return { base: "wine", isContainer: false, isProduct: false };
+    if (segments[0] === "distilled") return { base: "distilled spirits", isContainer: false, isProduct: false };
+    if (segments[0] === "liqueur") return { base: "liqueur", isContainer: false, isProduct: false };
   }
 
-  // Check if first segment is a container category
   const first = segments[0].replace(/[,;:.!?]+$/, "").trim();
+
+  // Taxonomic containers: segment[1] IS the food identity
+  // "Spices, pepper, black" → base="pepper"
   if (CONTAINER_CATEGORIES.has(first) && segments.length >= 2) {
-    // Use segment[1] as the base identity
     const itemBase = segments[1].replace(/[,;:.!?]+$/, "").trim();
-    if (itemBase) return { base: itemBase, isContainer: true };
+    if (itemBase) return { base: itemBase, isContainer: true, isProduct: false };
+  }
+
+  // Product categories: segment[0] IS the food identity, segment[1] is a modifier
+  // "Cookies, butter" → base="cookies" (NOT "butter")
+  if (PRODUCT_CATEGORIES.has(first)) {
+    return { base: first, isContainer: false, isProduct: true };
   }
 
   // Generic: first segment
-  return { base: first || "unknown", isContainer: false };
+  return { base: first || "unknown", isContainer: false, isProduct: false };
 }
 
 /** Step 5: Extract specific canonical name */
-function extractSpecific(base: string, segments: string[], isAlcohol: boolean, isContainer: boolean): string {
+function extractSpecific(base: string, segments: string[], isAlcohol: boolean, isContainer: boolean, isProduct: boolean): string {
   if (!isAlcohol) {
+    // Product categories: segment[1] is a modifier/variety
+    // "Cookies, butter" → base="cookies", specific="butter cookies"
+    // "Crackers, graham" → base="crackers", specific="graham crackers"
+    if (isProduct && segments.length >= 2) {
+      const modifier = segments[1].replace(/[,;:.!?]+$/, "").trim();
+      if (modifier && modifier !== base) {
+        return `${modifier} ${base}`;
+      }
+      return base;
+    }
     // Container categories: combine segment[2] + base if present
     // "Spices, pepper, black" → base="pepper", specific="black pepper"
     if (isContainer && segments.length >= 3) {
@@ -395,8 +432,8 @@ export function canonicalizeDescription(description: string): CanonicalResult {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  const { base: baseName, isContainer } = extractBase(segments, isAlcohol);
-  const specificName = extractSpecific(baseName, segments, isAlcohol, isContainer);
+  const { base: baseName, isContainer, isProduct } = extractBase(segments, isAlcohol);
+  const specificName = extractSpecific(baseName, segments, isAlcohol, isContainer, isProduct);
 
   // Track container category as a removed token
   if (isContainer && segments.length >= 1) {

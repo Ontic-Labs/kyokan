@@ -407,8 +407,9 @@ const RECIPE_ALIASES = new Map<string, string>([
   ["kosher salt", "salt"],
   ["sea salt", "salt"],
   ["table salt", "salt"],
-  ["garlic salt", "salt"],
-  ["seasoning salt", "salt"],
+  // "garlic salt" and "seasoning salt" removed — these are blends with
+  // different nutrient profiles (sodium + garlic powder, sodium + spices).
+  // They should resolve to their own canonicals, not alias to pure salt.
   // Sugar — FDC base "sugar"
   ["white sugar", "sugar"],
   ["granulated sugar", "sugar"],
@@ -420,7 +421,8 @@ const RECIPE_ALIASES = new Map<string, string>([
   ["heavy whipping cream", "cream"],
   ["half-and-half", "cream"],
   // Beef — FDC specific "ground beef"
-  ["lean ground beef", "ground beef"],
+  // "lean ground beef" removed — should be its own canonical with ≥90% lean
+  // FDC entries only (USDA definition of "lean"). Post-match filter handles this.
   ["ground chuck", "ground beef"],
   // Chicken stock — FDC "Soup, stock, chicken" → base "soup" (too broad); let substring find it
   // (removed: "chicken stock"→"soup" maps stock to all soups)
@@ -968,6 +970,66 @@ function matchIngredient(ingredient: RecipeIngredient, index: FdcIndex): MatchRe
 }
 
 // ---------------------------------------------------------------------------
+// Post-match FDC membership filters
+//
+// Certain canonical ingredients need their FDC membership narrowed based on
+// description content. This runs AFTER matching to avoid complicating the
+// matching strategies. The filter returns the subset of FDC IDs that are
+// appropriate for the canonical identity.
+// ---------------------------------------------------------------------------
+
+type FdcFilter = (fdcIds: number[], foodsById: Map<number, FdcFood>) => number[];
+
+/**
+ * Filter ground beef by lean percentage in FDC description.
+ * USDA fat ratio patterns: "80% lean meat / 20% fat", "95% lean meat / 5% fat"
+ */
+function filterByLeanPercentage(minLean: number): FdcFilter {
+  return (fdcIds, foodsById) => {
+    const leanPattern = /(\d+)%\s*lean/i;
+    const filtered = fdcIds.filter((id) => {
+      const food = foodsById.get(id);
+      if (!food) return false;
+      const match = food.description.match(leanPattern);
+      if (!match) {
+        // No lean percentage in description — include only if description
+        // doesn't mention a fat ratio at all (e.g. "Beef, ground, unspecified")
+        return !food.description.includes("% lean") && !food.description.includes("% fat");
+      }
+      return parseInt(match[1], 10) >= minLean;
+    });
+    return filtered.length > 0 ? filtered : fdcIds; // fallback to all if filter eliminates everything
+  };
+}
+
+/** Map of canonical slug → FDC membership filter function */
+const POST_MATCH_FILTERS = new Map<string, FdcFilter>([
+  // "lean ground beef" should only include ≥90% lean entries (USDA definition)
+  ["lean-ground-beef", filterByLeanPercentage(90)],
+  // "extra lean ground beef" should only include ≥95% lean entries
+  ["extra-lean-ground-beef", filterByLeanPercentage(95)],
+]);
+
+function applyPostMatchFilters(
+  results: MatchResult[],
+  foods: FdcFood[],
+): void {
+  const foodsById = new Map<number, FdcFood>();
+  for (const f of foods) foodsById.set(f.fdcId, f);
+
+  for (const r of results) {
+    const filter = POST_MATCH_FILTERS.get(r.ingredientSlug);
+    if (filter && r.fdcIds.length > 0) {
+      const before = r.fdcIds.length;
+      r.fdcIds = filter(r.fdcIds, foodsById);
+      if (r.fdcIds.length !== before) {
+        console.log(`  POST-FILTER: ${r.ingredientName}: ${before} → ${r.fdcIds.length} FDC foods`);
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Database write (normalized schema)
 // ---------------------------------------------------------------------------
 
@@ -1252,6 +1314,9 @@ async function main() {
     }
   }
   console.log("");
+
+  // Apply post-match filters (e.g. lean ground beef → ≥90% lean only)
+  applyPostMatchFilters(results, foods);
 
   // Stats
   const matched = results.filter((r) => r.fdcIds.length > 0);

@@ -48,4 +48,5 @@ recipe.csv
 /data/RAW_*.csv
 /data/FoodData_Central_*.json
 /data/recipe-ratings.csv
+/data/recipe-alchemy.json
 *.parquet
