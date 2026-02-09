@@ -330,17 +330,19 @@ export async function searchIngredients(
 
   const orderBy = (() => {
     const dir = sortDir === "desc" ? "DESC" : "ASC";
+    // Unranked ingredients (canonical_rank = 0) sort to the end
+    const rankOrder = "CASE WHEN ci.canonical_rank = 0 THEN 1 ELSE 0 END, ci.canonical_rank ASC";
     switch (sortBy) {
       case "name":
-        return `ci.canonical_name ${dir}, ci.canonical_rank ASC`;
+        return `ci.canonical_name ${dir}, ${rankOrder}`;
       case "frequency":
-        return `ci.total_count ${dir}, ci.canonical_rank ASC`;
+        return `ci.total_count ${dir}, ${rankOrder}`;
       case "foods":
-        return `COALESCE(cfm.fdc_count, 0) ${dir}, ci.canonical_rank ASC`;
+        return `COALESCE(cfm.fdc_count, 0) ${dir}, ${rankOrder}`;
       case "nutrients":
-        return `CASE WHEN cin.canonical_id IS NULL THEN 0 ELSE 1 END ${dir}, ci.canonical_rank ASC`;
+        return `CASE WHEN cin.canonical_id IS NULL THEN 0 ELSE 1 END ${dir}, ${rankOrder}`;
       default:
-        return "ci.canonical_rank ASC";
+        return rankOrder;
     }
   })();
 
