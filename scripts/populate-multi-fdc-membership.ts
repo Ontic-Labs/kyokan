@@ -6,6 +6,9 @@
  * This gives each synthetic ingredient the full set of matching FDC foods,
  * enabling real nutrition range computation (P10–P90).
  *
+ * IMPORTANT: Only foods from ALLOWED_CATEGORIES are considered.
+ * Prepared foods, fast foods, baby foods, etc. are rejected at query time.
+ *
  * Usage:
  *   npx tsx scripts/populate-multi-fdc-membership.ts          # dry run
  *   npx tsx scripts/populate-multi-fdc-membership.ts --write  # write to DB
@@ -15,8 +18,12 @@
 import { Pool } from "pg";
 import * as dotenv from "dotenv";
 import { canonicalizeDescription } from "../src/lib/canonicalize";
+import { ALLOWED_CATEGORIES } from "./lib/constants";
 
 dotenv.config({ path: ".env.local" });
+
+// Re-export for backward compat (validate-data.ts etc.)
+export { ALLOWED_CATEGORIES } from "./lib/constants";
 
 function getPool(): Pool {
   const connectionString = process.env.DATABASE_URL;
@@ -63,14 +70,23 @@ async function main(): Promise<void> {
     console.log();
 
     // ---------------------------------------------------------------
-    // 1. Load all FDC foods from the DB and canonicalize in JS
+    // 1. Load FDC foods from ALLOWED categories only
     // ---------------------------------------------------------------
-    console.log("Loading FDC foods from DB...");
+    console.log("Loading FDC foods from DB (allowed categories only)...");
     const foodsResult = await client.query<{
       fdc_id: string;
       description: string;
       data_type: string;
-    }>(`SELECT fdc_id, description, data_type FROM foods ORDER BY fdc_id`);
+    }>(
+      `SELECT f.fdc_id, f.description, f.data_type
+       FROM foods f
+       JOIN food_categories fc ON fc.category_id = f.category_id
+       WHERE fc.name = ANY($1)
+         AND f.description NOT ILIKE '%meatless%'
+         AND f.description NOT ILIKE '%imitation%'
+       ORDER BY f.fdc_id`,
+      [ALLOWED_CATEGORIES as unknown as string[]]
+    );
 
     console.log(`  ${foodsResult.rows.length} foods loaded`);
 

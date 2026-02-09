@@ -108,7 +108,7 @@ async function main(): Promise<void> {
           const placeholders: string[] = [];
           let idx = 1;
           for (const entry of batch) {
-            placeholders.push(`($${idx}, $${idx + 1}, 0, 0)`);
+            placeholders.push(`($${idx}, $${idx + 1}, NULL, 0)`);
             vals.push(entry.slug, entry.name);
             idx += 2;
           }

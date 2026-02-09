@@ -330,8 +330,8 @@ export async function searchIngredients(
 
   const orderBy = (() => {
     const dir = sortDir === "desc" ? "DESC" : "ASC";
-    // Unranked ingredients (canonical_rank = 0) sort to the end
-    const rankOrder = "CASE WHEN ci.canonical_rank = 0 THEN 1 ELSE 0 END, ci.canonical_rank ASC";
+    // NULL rank = unranked → always sort to the end
+    const rankOrder = "ci.canonical_rank ASC NULLS LAST";
     switch (sortBy) {
       case "name":
         return `ci.canonical_name ${dir}, ${rankOrder}`;
