@@ -135,9 +135,10 @@ async function main(): Promise<void> {
         console.log(`  Done. Total canonical entries: ${slugToCanonicalId.size}`);
       }
 
-      // 2. Clear existing canonical_fdc_membership and repopulate
-      await client.query(`DELETE FROM canonical_fdc_membership`);
-      console.log(`\nPopulating canonical_fdc_membership...`);
+      // 2. Upsert staging winners into canonical_fdc_membership
+      //    (DO NOT delete existing rows — multi-FDC memberships from
+      //    populate-multi-fdc-membership.ts must be preserved)
+      console.log(`\nUpserting canonical_fdc_membership from staging...`);
 
       const BATCH = 500;
       let written = 0;

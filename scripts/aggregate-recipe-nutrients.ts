@@ -27,7 +27,14 @@ function getPool(): Pool {
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is not set");
   }
-  return new Pool({ connectionString, max: 1 });
+  return new Pool({ 
+    connectionString, 
+    max: 1,
+    idleTimeoutMillis: 0, // Disable idle timeout
+    connectionTimeoutMillis: 0, // Disable connection timeout
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000, // Send keepalive every 10s
+  });
 }
 
 interface CanonicalInfo {
